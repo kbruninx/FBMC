@@ -29,7 +29,7 @@ day_count = 56
 price_forecasts = []
 
 day = 1
-for day in 1:day_count
+#for day in 1:day_count
     println("DAY ", day)
 
     coal_prices = coal_prices_g[(num_t_passed+1):(num_t_passed)+num_t]
@@ -126,7 +126,7 @@ for day in 1:day_count
         for t in 1:num_t
             for bid in 1:num_bid(t, z)
                 A_balance[num_t*(z-1)+t, prev_pos + 1] = 1
-                prev_pos += 1
+                global prev_pos += 1
             end
         end
     end
@@ -174,7 +174,7 @@ for day in 1:day_count
 
     push!(price_forecasts, JuMP.dual.(balance))
     global num_t_passed += num_t  
-end
+#end
 
 zone_list = []
 for z in 3:num_z
