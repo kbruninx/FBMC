@@ -126,11 +126,11 @@ for exp_len in experiments
                 if tech == 1 || tech == 8 || tech == 9 || tech == 10 # without fuel-responsiveness
                     @constraint(model, c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] == alpha_coeff[num_tech*(z-1)+tech] + (beta_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t] + gamma_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t]^2))
                 elseif tech == 2 || tech == 3 || tech == 5 # coal
-                    @constraint(model, c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] == alpha_coeff[num_tech*(z-1)+tech] + coal_prices[t]/10 * (beta_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t] + gamma_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t]^2))
+                    @constraint(model, c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] == coal_prices[t]/10 * (alpha_coeff[num_tech*(z-1)+tech] + beta_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t] + gamma_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t]^2))
                 elseif tech == 4 # gas
-                    @constraint(model, c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] == alpha_coeff[num_tech*(z-1)+tech] + gas_prices[t]/10 * (beta_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t] + gamma_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t]^2))
+                    @constraint(model, c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] == gas_prices[t]/10 * (alpha_coeff[num_tech*(z-1)+tech] + beta_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t] + gamma_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t]^2))
                 elseif tech == 6 # oil
-                    @constraint(model, c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] == alpha_coeff[num_tech*(z-1)+tech] + oil_prices[t]/10 * (beta_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t] + gamma_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t]^2))
+                    @constraint(model, c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] == oil_prices[t]/10 * (alpha_coeff[num_tech*(z-1)+tech] + beta_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t] + gamma_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t]^2))
                 elseif tech == 7 # hydro
                     @constraint(model, c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] == alpha_coeff[num_tech*(z-1)+tech] + beta_coeff[num_tech*(z-1)+tech] * g_obs[num_t*num_tech*(z-1)+num_t*(tech-1)+t])
                 end
@@ -140,8 +140,8 @@ for exp_len in experiments
 
     @variable(model, eps1[1:num_z*num_t] >= 0)
     @variable(model, eps2[1:num_z*num_t] >= 0)
-    @variable(model, eps3[1:num_z*num_t] >= 0)
-    @variable(model, eps4[1:num_z*num_t] >= 0)
+    #@variable(model, eps3[1:num_z*num_t] >= 0)
+    #@variable(model, eps4[1:num_z*num_t] >= 0)
 
     @variable(model, g[1:num_z*num_tech*num_t] >= 0)
     @variable(model, np[1:num_z*num_t])
@@ -203,11 +203,11 @@ for exp_len in experiments
     @constraint(model, sum(c) .- b1_balance' * lambda .- b1_exchange' * lambda_exchange .- b2_gen' * mu_gen .- b2_exchange' * mu_exchange == 0)
 
     @constraint(model, lambda .- lambda_obs .== eps1 .- eps2)
-    @constraint(model, np .- np_obs .== eps3 .- eps4)
+    #@constraint(model, np .- np_obs .== eps3 .- eps4)
 
     u = ones(num_z*num_t)
-    #@objective(model, Min, eps1' * u + eps2' * u)
-    @objective(model, Min, (eps1' * u + eps2' * u)/(num_z*num_t*maximum(lambda_obs)) + (eps3' * u + eps4' * u)/(num_z*num_t*maximum(np_obs)))
+    @objective(model, Min, eps1' * u + eps2' * u)
+    #@objective(model, Min, (eps1' * u + eps2' * u)/(num_z*num_t*maximum(lambda_obs)) + (eps3' * u + eps4' * u)/(num_z*num_t*maximum(np_obs)))
 
     optimize!(model)
 
@@ -268,7 +268,7 @@ for z in 3:num_z
     push!(df_coeffs, DataFrames.DataFrame(alpha=alpha_coeffs, beta=beta_coeffs, gamma=gamma_coeffs))
 end
 
-XLSX.writetable("cost_coefficients_with_np.xlsx",
+XLSX.writetable("cost_coefficients_alpha_fuel.xlsx",
     "AT" => df_coeffs[1],
     "BE" => df_coeffs[2],
     "CZ" => df_coeffs[3],

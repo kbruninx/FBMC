@@ -27,6 +27,7 @@ xf_da_prices_non_fbmc = XLSX.readxlsx("./data/validation/day_ahead_prices_non_fb
 xf_demand = XLSX.readxlsx("./data/validation/demand.xlsx")
 xf_fuel_prices = XLSX.readxlsx("./data/validation/fuel_prices.xlsx")
 xf_generation = XLSX.readxlsx("./data/validation/generation.xlsx")
+xf_generation_outages = XLSX.readxlsx("./data/validation/generation_outages.xlsx")
 xf_ren_gen = XLSX.readxlsx("./data/validation/renewable_generation.xlsx")
 xf_netpos = XLSX.readxlsx("./data/validation/net_positions.xlsx")
 xf_ptdf = XLSX.readxlsx("./data/validation/ptdfs.xlsx")
@@ -60,6 +61,19 @@ ro_obs_g = remove_missing(xf_generation["RO"][sprintf1("B2:K%d", num_val_t+1)])
 si_obs_g = remove_missing(xf_generation["SI"][sprintf1("B2:K%d", num_val_t+1)])
 sk_obs_g = remove_missing(xf_generation["SK"][sprintf1("B2:K%d", num_val_t+1)])
 
+at_gen_out_g = remove_missing(xf_generation_outages["AT"][sprintf1("B2:K%d", num_val_t+1)])
+be_gen_out_g = remove_missing(xf_generation_outages["BE"][sprintf1("B2:K%d", num_val_t+1)])
+cz_gen_out_g = remove_missing(xf_generation_outages["CZ"][sprintf1("B2:K%d", num_val_t+1)])
+de_gen_out_g = remove_missing(xf_generation_outages["DE_LU"][sprintf1("B2:K%d", num_val_t+1)])
+fr_gen_out_g = remove_missing(xf_generation_outages["FR"][sprintf1("B2:K%d", num_val_t+1)])
+hr_gen_out_g = remove_missing(xf_generation_outages["HR"][sprintf1("B2:K%d", num_val_t+1)])
+hu_gen_out_g = remove_missing(xf_generation_outages["HU"][sprintf1("B2:K%d", num_val_t+1)])
+nl_gen_out_g = remove_missing(xf_generation_outages["NL"][sprintf1("B2:K%d", num_val_t+1)])
+pl_gen_out_g = remove_missing(xf_generation_outages["PL"][sprintf1("B2:K%d", num_val_t+1)])
+ro_gen_out_g = remove_missing(xf_generation_outages["RO"][sprintf1("B2:K%d", num_val_t+1)])
+si_gen_out_g = remove_missing(xf_generation_outages["SI"][sprintf1("B2:K%d", num_val_t+1)])
+sk_gen_out_g = remove_missing(xf_generation_outages["SK"][sprintf1("B2:K%d", num_val_t+1)])
+
 demand_g = remove_missing(xf_demand["Sheet1"][sprintf1("B2:O%d", num_val_t+1)]) # [z+t]
 lambda_obs_g = remove_missing(xf_da_prices["Sheet1"][sprintf1("B2:O%d", num_val_t+1)]) # [z+t]
 np_obs_g = remove_missing(xf_netpos["Sheet1"][sprintf1("B2:O%d", num_val_t+1)]) # [z+t]
@@ -71,7 +85,7 @@ g_max_g = vec(xf_capacities["Sheet1"]["B2:O11"]) # [z+tech]
 
 ren_gen_g = remove_missing(xf_ren_gen["Sheet1"][sprintf1("B2:O%d", num_val_t+1)]) # [z+t]
 
-xf_cost_coeffs = XLSX.readxlsx("./cost_coefficients_wo_np.xlsx")
+xf_cost_coeffs = XLSX.readxlsx("./cost_coefficients_alpha_fuel_weighted_no_sd.xlsx")
 
 at_a = xf_cost_coeffs["AT"]["A2:A11"]
 be_a = xf_cost_coeffs["BE"]["A2:A11"]

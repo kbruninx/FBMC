@@ -28,14 +28,32 @@ day_count = 56
 
 price_forecasts = []
 
-day = 1
-#for day in 1:day_count
+#day = 1
+for day in 1:day_count
     println("DAY ", day)
 
     coal_prices = coal_prices_g[(num_t_passed+1):(num_t_passed)+num_t]
     oil_prices = oil_prices_g[(num_t_passed+1):(num_t_passed)+num_t]
     gas_prices = gas_prices_g[(num_t_passed+1):(num_t_passed)+num_t]
     eua_prices = eua_prices_g[(num_t_passed+1):(num_t_passed)+num_t]
+
+    at_gen_out = vec(at_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    be_gen_out = vec(be_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    cz_gen_out = vec(cz_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    de_gen_out = vec(de_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    fr_gen_out = vec(fr_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    hr_gen_out = vec(hr_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    hu_gen_out = vec(hu_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    nl_gen_out = vec(nl_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    pl_gen_out = vec(pl_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    ro_gen_out = vec(ro_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    si_gen_out = vec(si_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    sk_gen_out = vec(sk_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
+    albe_gen_out = zeros(num_t*num_tech)
+    alde_gen_out = zeros(num_t*num_tech)
+
+    g_out = vcat(albe_gen_out, alde_gen_out, at_gen_out, be_gen_out, cz_gen_out, de_gen_out, fr_gen_out, hr_gen_out, hu_gen_out, nl_gen_out, pl_gen_out, ro_gen_out, si_gen_out, sk_gen_out)
+    g_out = convert(Vector{Float64}, g_out)
 
     demand = vec(demand_g[(num_t_passed+1):(num_t_passed)+num_t, :])
     demand = convert(Vector{Float64}, demand)
@@ -52,7 +70,7 @@ day = 1
     for z in 1:num_z
         for t in 1:num_t
             for tech in 1:num_tech
-                g_max_t[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = g_max_g[num_tech*(z-1)+tech] 
+                g_max_t[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = g_max_g[num_tech*(z-1)+tech] - g_out[num_t*num_tech*(z-1)+num_t*(tech-1)+t]
             end
         end
     end
@@ -73,7 +91,7 @@ day = 1
                 volumes = []
                 positions = []
 
-                block_width = floor(g_max_g[num_tech*(z-1)+tech]/max_block_amount_per_tech)
+                block_width = floor(g_max_t[num_t*num_tech*(z-1)+num_t*(tech-1)+t]/max_block_amount_per_tech)
                 if block_width < 5
                     block_width = 5
                 end
@@ -86,11 +104,11 @@ day = 1
                     end
                     calc_pos = (vol_pos + next_pos)/2
                     if tech == 2 || tech == 3 || tech == 5 # coal
-                        price = alpha[num_tech*(z-1)+tech] + coal_prices[t]/10 * (beta[num_tech*(z-1)+tech] * calc_pos + gamma[num_tech*(z-1)+tech] * calc_pos^2)
+                        price = coal_prices[t]/10 * (alpha[num_tech*(z-1)+tech] + beta[num_tech*(z-1)+tech] * calc_pos + gamma[num_tech*(z-1)+tech] * calc_pos^2)
                     elseif tech == 4 # gas
-                        price = alpha[num_tech*(z-1)+tech] + gas_prices[t]/10 * (beta[num_tech*(z-1)+tech] * calc_pos + gamma[num_tech*(z-1)+tech] * calc_pos^2)
+                        price = gas_prices[t]/10 * (alpha[num_tech*(z-1)+tech] + beta[num_tech*(z-1)+tech] * calc_pos + gamma[num_tech*(z-1)+tech] * calc_pos^2)
                     elseif tech == 6 # oil
-                        price = alpha[num_tech*(z-1)+tech] + oil_prices[t]/10 * (beta[num_tech*(z-1)+tech] * calc_pos + gamma[num_tech*(z-1)+tech] * calc_pos^2)
+                        price = oil_prices[t]/10 * (alpha[num_tech*(z-1)+tech] + beta[num_tech*(z-1)+tech] * calc_pos + gamma[num_tech*(z-1)+tech] * calc_pos^2)
                     else
                         price = alpha[num_tech*(z-1)+tech] + (beta[num_tech*(z-1)+tech] * calc_pos + gamma[num_tech*(z-1)+tech] * calc_pos^2)
                     end
@@ -126,7 +144,7 @@ day = 1
         for t in 1:num_t
             for bid in 1:num_bid(t, z)
                 A_balance[num_t*(z-1)+t, prev_pos + 1] = 1
-                global prev_pos += 1
+                prev_pos += 1
             end
         end
     end
@@ -174,7 +192,7 @@ day = 1
 
     push!(price_forecasts, JuMP.dual.(balance))
     global num_t_passed += num_t  
-#end
+end
 
 zone_list = []
 for z in 3:num_z

@@ -1,0 +1,703 @@
+time_series:
+  default: # These values will be used unless specified in the entries below
+    source: "generation.csv"
+    csv_options: # These are passed to CSV.read
+      delim: ","
+      dateformat: "yyyy-mm-dd HH:MM:SS"
+    timestamp: "Datetime" # optional
+    weight: 1 # weight of time series in objective / clustering
+
+  AT_biomass:
+    value_column: "AT_biomass"
+    weight: 1
+
+  AT_brown_coal:
+    value_column: "AT_brown_coal"
+    weight: 1
+
+  AT_coal_gas:
+    value_column: "AT_coal_gas"
+    weight: 1
+
+  AT_natural_gas:
+    value_column: "AT_natural_gas"
+    weight: 1
+
+  AT_hard_coal:
+     value_column: "AT_hard_coal"
+    weight: 1
+  
+  AT_oil:
+    value_column: "AT_oil"
+    weight: 1
+
+  AT_hydro:
+    value_column: "AT_hydro"
+    weight: 1
+
+  AT_nuclear:
+    value_column: "AT_nuclear"
+    weight: 1
+
+  AT_waste:
+    value_column: "AT_waste"
+    weight: 1
+
+  AT_other:
+    value_column: "AT_other"
+    weight: 1
+
+  AT_solar:
+    value_column: "AT_solar"
+    weight: 1
+
+  AT_wind_onshore:
+    value_column: "AT_wind_onshore"
+    weight: 1
+
+  AT_wind_offshore:
+    value_column: "AT_wind_offshore"
+    weight: 1
+
+  AT_other_renewable:
+    value_column: "AT_other_renewable"
+    weight: 1
+
+  BE_biomass:
+    value_column: "BE_biomass"
+    weight: 1
+
+  BE_brown_coal:
+    value_column: "BE_brown_coal"
+    weight: 1
+   
+  BE_coal_gas:
+    value_column: "BE_coal_gas"
+    weight: 1
+
+  BE_natural_gas:
+    value_column: "BE_natural_gas"
+    weight: 1
+
+  BE_hard_coal:
+    value_column: "BE_hard_coal"
+    weight: 1
+
+  BE_oil:
+    value_column: "BE_oil"
+    weight: 1
+
+  BE_hydro:
+    value_column: "BE_hydro"
+    weight: 1
+
+  BE_nuclear:
+    value_column: "BE_nuclear"
+    weight: 1
+
+  BE_waste:
+    value_column: "BE_waste"
+    weight: 1
+
+  BE_other:
+    value_column: "BE_other"
+    weight: 1
+
+  BE_solar:
+    value_column: "BE_solar"
+    weight: 1
+
+  BE_wind_onshore:
+    value_column: "BE_wind_onshore"
+    weight: 1
+
+  BE_wind_offshore:
+    value_column: "BE_wind_offshore"
+    weight: 1
+
+  BE_other_renewable:
+    value_column: "BE_other_renewable"
+    weight: 1
+
+  CZ_biomass:
+    value_column: "CZ_biomass"
+    weight: 1
+
+  CZ_brown_coal:
+    value_column: "CZ_brown_coal"
+    weight: 1
+
+  CZ_coal_gas:
+    value_column: "CZ_coal_gas"
+    weight: 1
+
+  CZ_natural_gas:
+    value_column: "CZ_natural_gas"
+    weight: 1
+
+  CZ_hard_coal:
+    value_column: "CZ_hard_coal"
+    weight: 1
+
+  CZ_oil:
+    value_column: "CZ_oil"
+    weight: 1
+
+  CZ_hydro:
+    value_column: "CZ_hydro"
+    weight: 1
+
+  CZ_nuclear:
+    value_column: "CZ_nuclear"
+    weight: 1
+
+  CZ_waste:
+    value_column: "CZ_waste"
+    weight: 1
+
+  CZ_other:
+    value_column: "CZ_other"
+    weight: 1
+
+  CZ_solar:
+    value_column: "CZ_solar"
+    weight: 1
+
+  CZ_wind_onshore:
+     value_column: "CZ_wind_onshore"
+    weight: 1
+
+  CZ_wind_offshore:
+    value_column: "CZ_wind_offshore"
+    weight: 1
+
+  CZ_other_renewable:
+    value_column: "CZ_other_renewable"
+    weight: 1
+
+  DE_LU_biomass:
+    value_column: "DE_LU_biomass"
+    weight: 1
+
+  DE_LU_brown_coal:
+    value_column: "DE_LU_brown_coal"
+    weight: 1
+
+  DE_LU_coal_gas:
+    value_column: "DE_LU_coal_gas"
+    weight: 1
+
+  DE_LU_natural_gas:
+    value_column: "DE_LU_natural_gas"
+    weight: 1
+
+  DE_LU_hard_coal:
+    value_column: "DE_LU_hard_coal"
+    weight: 1
+
+  DE_LU_oil:
+    value_column: "DE_LU_oil"
+    weight: 1
+
+  DE_LU_hydro:
+    value_column: "DE_LU_hydro"
+    weight: 1
+
+  DE_LU_nuclear:
+    value_column: "DE_LU_nuclear"
+    weight: 1
+
+  DE_LU_waste:
+    value_column: "DE_LU_waste"
+    weight: 1
+
+  DE_LU_other:
+    value_column: "DE_LU_other"
+    weight: 1
+
+  DE_LU_solar:
+    value_column: "DE_LU_solar"
+    weight: 1
+
+  DE_LU_wind_onshore:
+    value_column: "DE_LU_wind_onshore"
+    weight: 1
+
+  DE_LU_wind_offshore:
+    value_column: "DE_LU_wind_offshore"
+    weight: 1
+
+  DE_LU_other_renewable:
+    value_column: "DE_LU_other_renewable"
+    weight: 1
+
+  FR_biomass:
+    value_column: "FR_biomass"
+    weight: 1
+
+  FR_brown_coal:
+    value_column: "FR_brown_coal"
+    weight: 1
+
+  FR_coal_gas:
+    value_column: "FR_coal_gas"
+    weight: 1
+
+  FR_natural_gas:
+    value_column: "FR_natural_gas"
+    weight: 1
+
+  FR_hard_coal:
+    value_column: "FR_hard_coal"
+    weight: 1
+
+  FR_oil:
+    value_column: "FR_oil"
+    weight: 1
+
+  FR_hydro:
+    value_column: "FR_hydro"
+    weight: 1
+
+  FR_nuclear:
+    value_column: "FR_nuclear"
+    weight: 1
+
+  FR_waste:
+    value_column: "FR_waste"
+    weight: 1
+ 
+  FR_other:
+    value_column: "FR_other"
+    weight: 1
+
+  FR_solar:
+    value_column: "FR_solar"
+    weight: 1
+
+  FR_wind_onshore:
+    value_column: "FR_wind_onshore"
+    weight: 1
+
+  FR_wind_offshore:
+    value_column: "FR_wind_offshore"
+    weight: 1
+
+  FR_other_renewable:
+    value_column: "FR_other_renewable"
+    weight: 1
+
+  HR_biomass:
+    value_column: "HR_biomass"
+    weight: 1
+
+  HR_brown_coal:
+    value_column: "HR_brown_coal"
+    weight: 1
+
+  HR_coal_gas:
+    value_column: "HR_coal_gas"
+    weight: 1
+
+  HR_natural_gas:
+    value_column: "HR_natural_gas"
+    weight: 1
+
+  HR_hard_coal:
+    value_column: "HR_hard_coal"
+    weight: 1
+
+  HR_oil:
+    value_column: "HR_oil"
+    weight: 1
+
+  HR_hydro:
+    value_column: "HR_hydro"
+    weight: 1
+
+  HR_nuclear:
+    value_column: "HR_nuclear"
+    weight: 1
+
+  HR_waste:
+    value_column: "HR_waste"
+    weight: 1
+
+  HR_other:
+    value_column: "HR_other"
+    weight: 1
+
+  HR_solar:
+    value_column: "HR_solar"
+    weight: 1
+
+  HR_wind_onshore:
+    value_column: "HR_wind_onshore"
+    weight: 1
+
+  HR_wind_offshore:
+    value_column: "HR_wind_offshore"
+    weight: 1
+
+  HR_other_renewable:
+    value_column: "HR_other_renewable"
+    weight: 1
+
+  HU_biomass:
+    value_column: "HU_biomass"
+    weight: 1
+
+  HU_brown_coal:
+    value_column: "HU_brown_coal"
+    weight: 1
+
+  HU_coal_gas:
+    value_column: "HU_coal_gas"
+    weight: 1
+
+  HU_natural_gas:
+    value_column: "HU_natural_gas"
+    weight: 1
+
+  HU_hard_coal:
+    value_column: "HU_hard_coal"
+    weight: 1
+
+  HU_oil:
+    value_column: "HU_oil"
+    weight: 1
+
+  HU_hydro:
+    value_column: "HU_hydro"
+    weight: 1
+
+  HU_nuclear:
+    value_column: "HU_nuclear"
+    weight: 1
+
+  HU_waste:
+    value_column: "HU_waste"
+    weight: 1
+
+  HU_other:
+    value_column: "HU_other"
+    weight: 1
+
+  HU_solar:
+    value_column: "HU_solar"
+    weight: 1
+
+  HU_wind_onshore:
+    value_column: "HU_wind_onshore"
+    weight: 1
+
+  HU_wind_offshore:
+    value_column: "HU_wind_offshore"
+    weight: 1
+
+  HU_other_renewable:
+    value_column: "HU_other_renewable"
+    weight: 1
+
+  NL_biomass:
+    value_column: "NL_biomass"
+    weight: 1
+
+  NL_brown_coal:
+    value_column: "NL_brown_coal"
+    weight: 1
+
+  NL_coal_gas:
+    value_column: "NL_coal_gas"
+    weight: 1
+
+  NL_natural_gas:
+    value_column: "NL_natural_gas"
+    weight: 1
+
+  NL_hard_coal:
+    value_column: "NL_hard_coal"
+    weight: 1
+
+  NL_oil:
+    value_column: "NL_oil"
+    weight: 1
+
+  NL_hydro:
+    value_column: "NL_hydro"
+    weight: 1
+
+  NL_nuclear:
+    value_column: "NL_nuclear"
+    weight: 1
+
+  NL_waste:
+    value_column: "NL_waste"
+    weight: 1
+
+  NL_other:
+    value_column: "NL_other"
+    weight: 1
+
+  NL_solar:
+    value_column: "NL_solar"
+    weight: 1
+
+  NL_wind_onshore:
+    value_column: "NL_wind_onshore"
+    weight: 1
+
+  NL_wind_offshore:
+    value_column: "NL_wind_offshore"
+    weight: 1
+
+  NL_other_renewable:
+    value_column: "NL_other_renewable"
+    weight: 1
+
+  PL_biomass:
+    value_column: "PL_biomass"
+    weight: 1
+
+  PL_brown_coal:
+    value_column: "PL_brown_coal"
+    weight: 1
+
+  PL_coal_gas:
+    value_column: "PL_coal_gas"
+    weight: 1
+
+  PL_natural_gas:
+    value_column: "PL_natural_gas"
+    weight: 1
+
+  PL_hard_coal:
+    value_column: "PL_hard_coal"
+    weight: 1
+
+  PL_oil:
+    value_column: "PL_oil"
+    weight: 1
+
+  PL_hydro:
+    value_column: "PL_hydro"
+    weight: 1
+
+  PL_nuclear:
+    value_column: "PL_nuclear"
+    weight: 1
+
+  PL_waste:
+    value_column: "PL_waste"
+    weight: 1
+
+  PL_other:
+    value_column: "PL_other"
+    weight: 1
+
+  PL_solar:
+    value_column: "PL_solar"
+    weight: 1
+
+  PL_wind_onshore:
+    value_column: "PL_wind_onshore"
+    weight: 1
+
+  PL_wind_offshore:
+    value_column: "PL_wind_offshore"
+    weight: 1
+
+  PL_other_renewable:
+    value_column: "PL_other_renewable"
+    weight: 1
+
+  RO_biomass:
+    value_column: "RO_biomass"
+    weight: 1
+
+  RO_brown_coal:
+    value_column: "RO_brown_coal"
+    weight: 1
+
+  RO_coal_gas:
+    value_column: "RO_coal_gas"
+    weight: 1
+
+  RO_natural_gas:
+    value_column: "RO_natural_gas"
+    weight: 1
+
+  RO_hard_coal:
+    value_column: "RO_hard_coal"
+    weight: 1
+
+  RO_oil:
+    value_column: "RO_oil"
+    weight: 1
+
+  RO_hydro:
+    value_column: "RO_hydro"
+    weight: 1
+
+  RO_nuclear:
+    value_column: "RO_nuclear"
+    weight: 1
+
+  RO_waste:
+    value_column: "RO_waste"
+    weight: 1
+
+  RO_other:
+    value_column: "RO_other"
+    weight: 1
+
+  RO_solar:
+    value_column: "RO_solar"
+    weight: 1
+
+  RO_wind_onshore:
+    value_column: "RO_wind_onshore"
+    weight: 1
+
+  RO_wind_offshore:
+    value_column: "RO_wind_offshore"
+    weight: 1
+
+  RO_other_renewable:
+    value_column: "RO_other_renewable"
+    weight: 1
+
+  SI_biomass:
+    value_column: "SI_biomass"
+    weight: 1
+
+  SI_brown_coal:
+    value_column: "SI_brown_coal"
+    weight: 1
+
+  SI_coal_gas:
+    value_column: "SI_coal_gas"
+    weight: 1
+
+  SI_natural_gas:
+    value_column: "SI_natural_gas"
+    weight: 1
+
+  SI_hard_coal:
+    value_column: "SI_hard_coal"
+    weight: 1
+
+  SI_oil:
+    value_column: "SI_oil"
+    weight: 1
+
+  SI_hydro:
+    value_column: "SI_hydro"
+    weight: 1
+
+  SI_nuclear:
+    value_column: "SI_nuclear"
+    weight: 1
+
+  SI_waste:
+    value_column: "SI_waste"
+    weight: 1
+
+  SI_other:
+    value_column: "SI_other"
+    weight: 1
+
+  SI_solar:
+    value_column: "SI_solar"
+    weight: 1
+
+  SI_wind_onshore:
+    value_column: "SI_wind_onshore"
+    weight: 1
+
+  SI_wind_offshore:
+    value_column: "SI_wind_offshore"
+    weight: 1
+
+  SI_other_renewable:
+    value_column: "SI_other_renewable"
+    weight: 1
+
+  SK_biomass:
+    value_column: "SK_biomass"
+    weight: 1
+
+  SK_brown_coal:
+    value_column: "SK_brown_coal"
+    weight: 1
+
+  SK_coal_gas:
+    value_column: "SK_coal_gas"
+    weight: 1
+
+  SK_natural_gas:
+    value_column: "SK_natural_gas"
+    weight: 1
+
+  SK_hard_coal:
+    value_column: "SK_hard_coal"
+    weight: 1
+
+  SK_oil:
+    value_column: "SK_oil"
+    weight: 1
+
+  SK_hydro:
+    value_column: "SK_hydro"
+    weight: 1
+
+  SK_nuclear:
+    value_column: "SK_nuclear"
+    weight: 1
+
+  SK_waste:
+    value_column: "SK_waste"
+    weight: 1
+
+  SK_other:
+    value_column: "SK_other"
+    weight: 1
+
+  SK_solar:
+    value_column: "SK_solar"
+    weight: 1
+
+  SK_wind_onshore:
+    value_column: "SK_wind_onshore"
+    weight: 1
+
+  SK_wind_offshore:
+    value_column: "SK_wind_offshore"
+    weight: 1
+
+  SK_other_renewable:
+    value_column: "SK_other_renewable"
+    weight: 1
+
+method:
+  options: # Method agnostic options
+    mandatory_periods: [] # Leave empty to specify none
+    total_periods: 180
+    representative_periods: 10
+    time_steps_per_period: 24
+    sampling_time: "Hour(1)" # This is a DateTime format - for quarter hours, Hour(0.25)
+
+  optimization:
+    integral_weights: false
+    binary_ordering: true
+    equal_weights: false
+    duration_curve_error:
+      weight: 0.5
+      number_bins: 40
+      type: "absolute" # Or "absolute"
+
+results:
+  save_results: true
+  # Options for exactly what to save here
+  result_dir: 'results' # Relative to this file
+  create_plots: true
