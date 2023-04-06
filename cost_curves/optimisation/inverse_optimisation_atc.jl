@@ -4,6 +4,7 @@ using LinearAlgebra
 using Alpine
 using Ipopt
 using Statistics
+using StatsBase
 using QuadraticToBinary
 using Plots
 using SparseArrays
@@ -21,46 +22,41 @@ function sum_z_np(np, num_t)
     return result
 end
 
-fbmc_zones =  ["ALBE", "ALDE", "AT", "BE", "CZ", "DE_LU", "FR", "HR", "HU", "NL", "PL", "RO", "SI", "SK"]
-non_fbmc_zones =  ["CH", "GB", "ES", "IT_NORD", "DK_1", "NO_2"]
-all_zones = vcat(fbmc_zones, non_fbmc_zones)
-
-function has_interconnector(z1, z2)
-    if sort([all_zones[z1], all_zones[z2]]) == ["FR", "GB"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["ES", "FR"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["CH", "FR"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["FR", "IT_NORD"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["AT", "IT_NORD"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["AT", "CH"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["BE", "GB"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["DK_1", "NL"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["GB", "NL"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["NL", "NO_2"]
-        return true
-    elseif sort([all_zones[z1], all_zones[z2]]) == ["IT_NORD", "SI"]
-        return true
+function has_interconnector_ex_1(z, b)
+    if all_zones[z] == borders[b][1]
+        return -1
+    elseif all_zones[z] == borders[b][2]
+            return 1
+    else
+        return 0
+    end
 end
 
-function atc(z1, z2, t)
+function has_interconnector_ex_2(z, b)
+    if all_zones[z] == reverse(borders[b])[1]
+        return -1
+    elseif all_zones[z] == reverse(borders[b])[2]
+            return 1
+    else
+        return 0
+    end
+end
 
+function get_atc_ex_1(b, t)
+    return df_atc[!, borders[b][1] * "_" * borders[b][2]][t]
+end
+
+function get_atc_ex_2(b, t)
+    return df_atc[!, borders[b][2] * "_" * borders[b][1]][t]
 end
 
 num_t_passed = 0
-experiments = [120]
-#experiments = [240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 253, 253]
+experiments = [120 for n=1:3]
 
 experiment_results_alpha = []
 experiment_results_beta = []
 experiment_results_gamma = []
+experiment_results_objective = []
 
 # iterations out: 4, 6, 9, 10, 11
 # infeasible: 6
@@ -106,7 +102,7 @@ for exp_len in experiments
     dk_obs = vec(dk_obs_g[(num_t_passed+1):(num_t_passed)+num_t, :])
     no_obs = vec(no_obs_g[(num_t_passed+1):(num_t_passed)+num_t, :])
 
-    g_obs = vcat(albe_obs, alde_obs, at_obs, be_obs, cz_obs, de_obs, fr_obs, hr_obs, hu_obs, nl_obs, pl_obs, ro_obs, si_obs, sk_obs, ch_obs, gb_obs, es_obs, it_obs, dk_obs, no_obs)
+    g_obs = vcat(albe_obs, alde_obs, at_obs, be_obs, cz_obs, de_obs, fr_obs, hr_obs, hu_obs, nl_obs, pl_obs, ro_obs, si_obs, sk_obs, ch_obs, gb_obs, es_obs, it_obs) # dk_obs, no_obs)
     g_obs = convert(Vector{Float64}, g_obs)
 
     demand_fbmc = vec(demand_g[(num_t_passed+1):(num_t_passed)+num_t, :])
@@ -203,17 +199,23 @@ for exp_len in experiments
 
     @variable(model, g[1:(num_z+num_z_non_fbmc)*num_tech*num_t] >= 0)
     @variable(model, np[1:num_z*num_t])
+    @variable(model, atc_ex_1[1:num_atc_border*num_t])
+    @variable(model, atc_ex_2[1:num_atc_border*num_t])
 
     # dual variables
     @variable(model, lambda[1:(num_z+num_z_non_fbmc)*num_t])
     @variable(model, lambda_exchange[1:num_t])
 
     @variable(model, mu_gen[1:(num_z+num_z_non_fbmc)*num_tech*num_t] <= 0)
-    @variable(model, mu_exchange[1:(num_j*num_t+2*(num_z+num_z_non_fbmc)*num_t)] <= 0)
+    @variable(model, mu_exchange[1:(num_j*num_t+2*num_atc_border*num_t)] <= 0)
+
+    # for minimasing duality gap
+    @variable(model, epsilon_duality_abs)
+    @variable(model, epsilon_duality)
 
     @constraint(model, g .== g_obs) # observe generation
 
-    A_balance = spzeros((num_z+num_z_non_fbmc)*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t+num_z*num_t+2*(num_z+num_z_non_fbmc)*num_t) # contains g and np and atc (e/i)
+    A_balance = spzeros((num_z+num_z_non_fbmc)*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t+num_z*num_t+2*num_atc_border*num_t) # contains g and np and atc (e/i)
     prev_pos = (num_z+num_z_non_fbmc)*num_tech*num_t
     for z in 1:(num_z+num_z_non_fbmc)
         for t in 1:num_t
@@ -231,30 +233,30 @@ for exp_len in experiments
 
     prev_pos += num_z*num_t
 
-    for z1 in 1:(num_z+num_z_non_fbmc)
-        for z2 in 1:(num_z+num_z_non_fbmc)
+    for z in 1:(num_z+num_z_non_fbmc)
+        for b in 1:num_atc_border
             for t in 1:num_t
-                A_balance[num_t*(z1-1)+t, prev_pos+num_t*(z2-1)+t] = -1*has_interconnector(z1, z2) # exports
+                A_balance[num_t*(z-1)+t, prev_pos+num_t*(b-1)+t] = has_interconnector_ex_1(z, b) # atc exchange direction 1
             end
         end
     end
 
-    prev_pos += (num_z+num_z_non_fbmc)*num_t
+    prev_pos += num_atc_border*num_t
 
-    for z1 in 1:(num_z+num_z_non_fbmc)
-        for z2 in 1:(num_z+num_z_non_fbmc)
+    for z in 1:(num_z+num_z_non_fbmc)
+        for b in 1:num_atc_border
             for t in 1:num_t
-                A_balance[num_t*(z1-1)+t, prev_pos+num_t*(z2-1)+t] = has_interconnector(z1, z2) # imports
+                A_balance[num_t*(z-1)+t, prev_pos+num_t*(b-1)+t] = has_interconnector_ex_2(z, b) # atc exchange direction 2
             end
         end
     end
 
     b1_balance = demand - ren_gen
 
-    B_gen = sparse(cat(Matrix(I, (num_z+num_z_non_fbmc)*num_tech*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t), spzeros((num_z+num_z_non_fbmc)*num_tech*num_t, num_z*num_t); dims=(2)))
+    B_gen = sparse(cat(Matrix(I, (num_z+num_z_non_fbmc)*num_tech*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t), spzeros((num_z+num_z_non_fbmc)*num_tech*num_t, num_z*num_t + 2*num_atc_border*num_t); dims=(2)))
     b2_gen = g_max_t
 
-    A_exchange = spzeros(num_t, num_z*num_tech*num_t+num_z*num_t+2*(num_z+num_z_non_fbmc)*num_t)
+    A_exchange = spzeros(num_t, (num_z+num_z_non_fbmc)*num_tech*num_t+num_z*num_t+2*num_atc_border*num_t)
 
     prev_pos = (num_z+num_z_non_fbmc)*num_tech*num_t
     for t in 1:num_t
@@ -266,7 +268,7 @@ for exp_len in experiments
     b1_exchange = spzeros(num_t)
 
     B_exchange_temp = spzeros(num_j*num_t, num_z*num_t)
-    b2_exchange = ram
+
     for t in 1:num_t
         for j in 1:num_j
             for z in 1:num_z
@@ -274,62 +276,71 @@ for exp_len in experiments
             end
         end
     end
-    B_exchange_ptdf = sparse(cat(spzeros(num_j*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t), B_exchange_temp; dims=(2)))
+    B_exchange_ptdf = sparse(cat(spzeros(num_j*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t), B_exchange_temp, spzeros(num_j*num_t, 2*num_atc_border*num_t); dims=(2)))
     
-    B_exchange_atc = spzeros((num_z+num_z_non_fbmc)*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t + num_z*num_t + 2*(num_z+num_z_non_fbmc)*num_t)
+    B_exchange_atc = spzeros(2*num_atc_border*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t + num_z*num_t + 2*num_atc_border*num_t)
     prev_pos = (num_z+num_z_non_fbmc)*num_tech*num_t + num_z*num_t
     
-    for z1 in 1:(num_z+num_z_non_fbmc)
-        for z2 in 1:(num_z+num_z_non_fbmc)
-            for t in 1:num_t
-                B_exchange_atc[num_t*(z1-1)+t, prev_pos+num_t*(z2-1)+t] = atc(z1, z2, t) # exports
-            end
+    atc_1 = spzeros(num_atc_border*num_t)
+    for b in 1:num_atc_border
+        for t in 1:num_t
+            B_exchange_atc[num_t*(b-1)+t, prev_pos+num_t*(b-1)+t] = 1 # atc exchange direction 1
+            atc_1[num_t*(b-1)+t] = get_atc_ex_1(b, t)
         end
     end
 
-    prev_pos += (num_z+num_z_non_fbmc)*num_t
+    prev_pos += num_atc_border*num_t
 
-    for z1 in 1:(num_z+num_z_non_fbmc)
-        for z2 in 1:(num_z+num_z_non_fbmc)
-            for t in 1:num_t
-                B_exchange_atc[num_t*(z1-1)+t, prev_pos+num_t*(z2-1)+t] = atc(z2, z1, t) # imports
-            end
+    atc_2 = spzeros(num_atc_border*num_t)
+    for b in 1:num_atc_border
+        for t in 1:num_t
+            B_exchange_atc[num_t*(b-1)+t, prev_pos+num_t*(b-1)+t] = 1 # atc exchange direction 2
+            atc_2[num_t*(b-1)+t] = get_atc_ex_2(b, t)
         end
     end
 
+    b2_exchange = vcat(ram, atc_1, atc_2)
     B_exchange = sparse(cat(B_exchange_ptdf, B_exchange_atc; dims=(1)))
 
     # primal constraints
     #@constraint(model, balance, A_balance * vcat(g, np) .== b1_balance) # demand equality
-    @constraint(model, B_exchange * vcat(g, np) .<= b2_exchange) # net position, rams and ptdfs
+    @constraint(model, B_exchange * vcat(g, np, atc_ex_1, atc_ex_2) .<= b2_exchange) # net position, rams and ptdfs
     @constraint(model, sum_z_np(np, num_t) .== 0)
 
     # dual constraints
-    @constraint(model, cat(A_balance, A_exchange; dims=(1))' * vcat(lambda, lambda_exchange) .+ cat(B_gen, B_exchange; dims=(1))' * vcat(mu_gen, mu_exchange) .== vcat(c, spzeros(num_z*num_t)))
+    @constraint(model, cat(A_balance, A_exchange; dims=(1))' * vcat(lambda, lambda_exchange) .+ cat(B_gen, B_exchange; dims=(1))' * vcat(mu_gen, mu_exchange) .== vcat(c, spzeros(num_z*num_t), spzeros(2*num_atc_border*num_t)))
 
     # strong duality gap theorem
-    @constraint(model, sum(c) .- b1_balance' * lambda .- b1_exchange' * lambda_exchange .- b2_gen' * mu_gen .- b2_exchange' * mu_exchange == 0)
+    @constraint(model, sum(c) .- b1_balance' * lambda .- b1_exchange' * lambda_exchange .- b2_gen' * mu_gen .- b2_exchange' * mu_exchange == epsilon_duality_abs)
+    @constraint(model, epsilon_duality_abs <= epsilon_duality)
+    @constraint(model, -1*epsilon_duality_abs <= epsilon_duality)
 
     @constraint(model, lambda .- lambda_obs .== eps1 .- eps2)
     #@constraint(model, np .- np_obs .== eps3 .- eps4)
 
-    u = ones(num_z*num_t)
-    @objective(model, Min, eps1' * u + eps2' * u)
+    u = ones((num_z+num_z_non_fbmc)*num_t)
+    @objective(model, Min, eps1' * u + eps2' * u + epsilon_duality)
     #@objective(model, Min, (eps1' * u + eps2' * u)/(num_z*num_t*maximum(lambda_obs)) + (eps3' * u + eps4' * u)/(num_z*num_t*maximum(np_obs)))
-
-    optimize!(model)
 
     # iteratively adjust upon the previous values
     global num_t_passed += exp_len 
-    #global alpha_global += JuMP.value.(alpha)
-    #global beta_global += JuMP.value.(beta)
-    #global gamma_global += JuMP.value.(gamma)
 
-    if termination_status(model) == OPTIMAL
-        println("ITERATION ", iteration_count, " FOUND OPTIMAL SOLUTION")
-        push!(experiment_results_alpha, JuMP.value.(alpha))
-        push!(experiment_results_beta, JuMP.value.(beta))
-        push!(experiment_results_gamma, JuMP.value.(gamma))
+    try
+        optimize!(model)
+
+        if termination_status(model) == OPTIMAL
+            println("ITERATION ", iteration_count, " FOUND OPTIMAL SOLUTION")
+            push!(experiment_results_alpha, JuMP.value.(alpha))
+            push!(experiment_results_beta, JuMP.value.(beta))
+            push!(experiment_results_gamma, JuMP.value.(gamma))
+            push!(experiment_results_objective, JuMP.objective_value(model))
+    
+            #global alpha_global += JuMP.value.(alpha)
+            #global beta_global += JuMP.value.(beta)
+            #global gamma_global += JuMP.value.(gamma)
+        end
+    catch e
+        println("ERROR ENCOUNTERED")
     end
    
     global iteration_count += 1  
@@ -337,8 +348,10 @@ end
 
 # SAVE COEFFICIENTS
 
+objective_weights = 1 .- normalize(experiment_results_objective)
+
 df_coeffs = []
-for z in 3:num_z
+for z in 3:(num_z+num_z_non_fbmc)
     alpha_coeffs = zeros(num_tech)
     beta_coeffs = zeros(num_tech)
     gamma_coeffs = zeros(num_tech)
@@ -358,9 +371,9 @@ for z in 3:num_z
         beta_exp = convert(Vector{Float64}, beta_exp)
         gamma_exp = convert(Vector{Float64}, gamma_exp)
 
-        alpha_mean = mean(filter(!iszero, alpha_exp))
-        beta_mean = mean(filter(!iszero, beta_exp))
-        gamma_mean = mean(filter(!iszero, gamma_exp))
+        alpha_mean = mean(alpha_exp[findall(!iszero, alpha_exp)], Weights(objective_weights[findall(!iszero, alpha_exp)]))
+        beta_mean = mean(beta_exp[findall(!iszero, beta_exp)], Weights(objective_weights[findall(!iszero, beta_exp)]))
+        gamma_mean = mean(gamma_exp[findall(!iszero, gamma_exp)], Weights(objective_weights[findall(!iszero, gamma_exp)]))
 
         if !isnan(alpha_mean)
             alpha_coeffs[tech] = alpha_mean
@@ -376,7 +389,7 @@ for z in 3:num_z
     push!(df_coeffs, DataFrames.DataFrame(alpha=alpha_coeffs, beta=beta_coeffs, gamma=gamma_coeffs))
 end
 
-XLSX.writetable("cost_coefficients_alpha_fuel.xlsx",
+XLSX.writetable("cost_coefficients_atc.xlsx",
     "AT" => df_coeffs[1],
     "BE" => df_coeffs[2],
     "CZ" => df_coeffs[3],
@@ -389,6 +402,12 @@ XLSX.writetable("cost_coefficients_alpha_fuel.xlsx",
     "RO" => df_coeffs[10],
     "SI" => df_coeffs[11],
     "SK" => df_coeffs[12],
+    "CH" => df_coeffs[13],
+    "GB" => df_coeffs[14],
+    "ES" => df_coeffs[15],
+    "IT_NORD" => df_coeffs[16],
+    "DK_1" => df_coeffs[17],
+    "NO_2" => df_coeffs[18],
     overwrite=true
 )
 
