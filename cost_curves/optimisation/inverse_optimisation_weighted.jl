@@ -1,12 +1,8 @@
-using JuMP, BilevelJuMP, Gurobi, Dualization
+using JuMP, HiGHS
+#using Gurobi
 using DataFrames, XLSX
 using LinearAlgebra
-using Alpine
-using Ipopt
 using Statistics
-using StatsBase
-using QuadraticToBinary
-using Plots
 using SparseArrays
 using Formatting
 
@@ -22,8 +18,8 @@ function sum_z_np(np, num_t)
     return result
 end
 
-num_t_passed = 0
-experiments = [240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 253, 253]
+num_t_passed = 360*4
+experiments = [360 for n=1:4]
 
 """
 experiments = [240, 240, 240]
@@ -98,9 +94,12 @@ for exp_len in experiments
         end
     end
 
-    model = direct_model(Gurobi.Optimizer())
-    set_time_limit_sec(model, 120.0)
-    set_optimizer_attribute(model, "NonConvex", 2)
+    #model = direct_model(Gurobi.Optimizer())
+    #set_time_limit_sec(model, 120.0)
+    #set_optimizer_attribute(model, "NonConvex", 2)
+    model = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(model, "presolve", "on")
+    set_optimizer_attribute(model, "time_limit", 180.0)
 
     @variable(model, c[1:num_z*num_tech*num_t] >= 0)
 
@@ -279,7 +278,7 @@ for z in 3:num_z
     push!(df_coeffs, DataFrames.DataFrame(alpha=alpha_coeffs, beta=beta_coeffs, gamma=gamma_coeffs))
 end
 
-XLSX.writetable("cost_coefficients_alpha_fuel_weighted_no_sd.xlsx",
+XLSX.writetable("cost_coefficients_large_winter.xlsx",
     "AT" => df_coeffs[1],
     "BE" => df_coeffs[2],
     "CZ" => df_coeffs[3],

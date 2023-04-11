@@ -1,11 +1,8 @@
-using JuMP, BilevelJuMP, Gurobi, Dualization
+using JuMP, HiGHS
+#using Gurobi
 using DataFrames, XLSX
 using LinearAlgebra
-using Alpine
-using Ipopt
 using Statistics
-using QuadraticToBinary
-using Plots
 using SparseArrays
 using Formatting
 
@@ -85,7 +82,7 @@ g_max_g = vec(xf_capacities["Sheet1"]["B2:O11"]) # [z+tech]
 
 ren_gen_g = remove_missing(xf_ren_gen["Sheet1"][sprintf1("B2:O%d", num_val_t+1)]) # [z+t]
 
-xf_cost_coeffs = XLSX.readxlsx("./cost_coefficients_alpha_fuel_weighted_no_sd.xlsx")
+xf_cost_coeffs = XLSX.readxlsx("./cost_coefficients_large_winter.xlsx")
 
 at_a = xf_cost_coeffs["AT"]["A2:A11"]
 be_a = xf_cost_coeffs["BE"]["A2:A11"]

@@ -1,11 +1,8 @@
-using JuMP, BilevelJuMP, Gurobi, Dualization
+using JuMP, HiGHS
+#using Gurobi
 using DataFrames, XLSX
 using LinearAlgebra
-using Alpine
-using Ipopt
 using Statistics
-using QuadraticToBinary
-using Plots
 using SparseArrays
 using Formatting
 

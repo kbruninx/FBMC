@@ -1,14 +1,11 @@
-using JuMP, BilevelJuMP, Gurobi, Dualization
+using JuMP, HiGHS
+#using Gurobi
 using DataFrames, XLSX
 using LinearAlgebra
-using Alpine
-using Ipopt
 using Statistics
-using StatsBase
-using QuadraticToBinary
-using Plots
 using SparseArrays
 using Formatting
+using StatsBase
 
 function sum_z_np(np, num_t)
     result = []
@@ -51,7 +48,7 @@ function get_atc_ex_2(b, t)
 end
 
 num_t_passed = 0
-experiments = [120 for n=1:3]
+experiments = [240 for n=1:12]
 
 experiment_results_alpha = []
 experiment_results_beta = []
@@ -150,9 +147,12 @@ for exp_len in experiments
 
     g_max_t = vcat(g_max_t_fbmc, g_max_t_non_fbmc)
 
-    model = direct_model(Gurobi.Optimizer())
-    set_time_limit_sec(model, 120.0)
-    set_optimizer_attribute(model, "NonConvex", 2)
+    model = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(model, "presolve", "on")
+    set_optimizer_attribute(model, "time_limit", 180.0)
+    #model = direct_model(Gurobi.Optimizer())
+    #set_time_limit_sec(model, 120.0)
+    #set_optimizer_attribute(model, "NonConvex", 2)
 
     @variable(model, c[1:(num_z+num_z_non_fbmc)*num_tech*num_t] >= 0)
 
@@ -199,8 +199,8 @@ for exp_len in experiments
 
     @variable(model, g[1:(num_z+num_z_non_fbmc)*num_tech*num_t] >= 0)
     @variable(model, np[1:num_z*num_t])
-    @variable(model, atc_ex_1[1:num_atc_border*num_t])
-    @variable(model, atc_ex_2[1:num_atc_border*num_t])
+    @variable(model, atc_ex_1[1:num_atc_border*num_t] >= 0.0)
+    @variable(model, atc_ex_2[1:num_atc_border*num_t] >= 0.0)
 
     # dual variables
     @variable(model, lambda[1:(num_z+num_z_non_fbmc)*num_t])
@@ -389,7 +389,7 @@ for z in 3:(num_z+num_z_non_fbmc)
     push!(df_coeffs, DataFrames.DataFrame(alpha=alpha_coeffs, beta=beta_coeffs, gamma=gamma_coeffs))
 end
 
-XLSX.writetable("cost_coefficients_atc.xlsx",
+XLSX.writetable("cost_coefficients_large_atc.xlsx",
     "AT" => df_coeffs[1],
     "BE" => df_coeffs[2],
     "CZ" => df_coeffs[3],
@@ -406,8 +406,8 @@ XLSX.writetable("cost_coefficients_atc.xlsx",
     "GB" => df_coeffs[14],
     "ES" => df_coeffs[15],
     "IT_NORD" => df_coeffs[16],
-    "DK_1" => df_coeffs[17],
-    "NO_2" => df_coeffs[18],
+    #"DK_1" => df_coeffs[17],
+    #"NO_2" => df_coeffs[18],
     overwrite=true
 )
 
