@@ -1,14 +1,10 @@
-using JuMP, BilevelJuMP, Gurobi, Dualization
+using JuMP, HiGHS
+#using Gurobi
 using DataFrames, XLSX
 using LinearAlgebra
-using Alpine
-using Ipopt
 using Statistics
-using QuadraticToBinary
-using Plots
 using SparseArrays
 using Formatting
-using Juniper
 
 function sum_z_np(np, num_t)
     result = []
@@ -133,7 +129,8 @@ for day in 1:day_count
 
     # CLEARING
 
-    model = Model(Gurobi.Optimizer)
+    model = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(model, "presolve", "on")
 
     @variable(model, g[1:total_num_bid] >= 0.0)
     @variable(model, np[1:num_z*num_t])

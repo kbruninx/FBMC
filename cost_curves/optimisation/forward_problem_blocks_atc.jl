@@ -1,14 +1,10 @@
-using JuMP, BilevelJuMP, Gurobi, Dualization
+using JuMP, HiGHS
+#using Gurobi
 using DataFrames, XLSX
 using LinearAlgebra
-using Alpine
-using Ipopt
 using Statistics
-using QuadraticToBinary
-using Plots
 using SparseArrays
 using Formatting
-using Juniper
 
 function sum_z_np(np, num_t)
     result = []
@@ -21,10 +17,6 @@ function sum_z_np(np, num_t)
     end
     return result
 end
-
-fbmc_zones =  ["ALBE", "ALDE", "AT", "BE", "CZ", "DE_LU", "FR", "HR", "HU", "NL", "PL", "RO", "SI", "SK"]
-non_fbmc_zones =  ["CH", "GB", "ES", "IT_NORD", "DK_1", "NO_2"]
-all_zones = vcat(fbmc_zones, non_fbmc_zones)
 
 function has_interconnector_ex_1(z, b)
     if all_zones[z] == borders[b][1]
@@ -90,7 +82,7 @@ for day in 1:day_count
     dk_gen_out = vec(dk_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
     no_gen_out = vec(no_gen_out_g[(num_t_passed+1):(num_t_passed)+num_t, :])
 
-    g_out = vcat(albe_gen_out, alde_gen_out, at_gen_out, be_gen_out, cz_gen_out, de_gen_out, fr_gen_out, hr_gen_out, hu_gen_out, nl_gen_out, pl_gen_out, ro_gen_out, si_gen_out, sk_gen_out, ch_gen_out, gb_gen_out, es_gen_out, it_gen_out, dk_gen_out, no_gen_out)
+    g_out = vcat(albe_gen_out, alde_gen_out, at_gen_out, be_gen_out, cz_gen_out, de_gen_out, fr_gen_out, hr_gen_out, hu_gen_out, nl_gen_out, pl_gen_out, ro_gen_out, si_gen_out, sk_gen_out, ch_gen_out, gb_gen_out, es_gen_out, it_gen_out) #, dk_gen_out, no_gen_out)
     g_out = convert(Vector{Float64}, g_out)
 
     demand_fbmc = vec(demand_g[(num_t_passed+1):(num_t_passed)+num_t, :])
@@ -129,7 +121,7 @@ for day in 1:day_count
 
     # GENERATING BLOCK BIDS
 
-    max_block_amount_per_tech = 25
+    max_block_amount_per_tech = 30
     min_block_width = 5
 
     block_bids = []
@@ -185,12 +177,14 @@ for day in 1:day_count
 
     # CLEARING
 
-    model = Model(Gurobi.Optimizer)
+    #model = Model(Gurobi.Optimizer)
+    model = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(model, "presolve", "on")
 
     @variable(model, g[1:total_num_bid] >= 0.0)
     @variable(model, np[1:num_z*num_t])
-    @variable(model, atc_ex_1[1:num_atc_border*num_t])
-    @variable(model, atc_ex_2[1:num_atc_border*num_t])
+    @variable(model, atc_ex_1[1:num_atc_border*num_t] >= 0.0)
+    @variable(model, atc_ex_2[1:num_atc_border*num_t] >= 0.0)
 
     A_balance = spzeros((num_z+num_z_non_fbmc)*num_t, total_num_bid+num_z*num_t+2*num_atc_border*num_t) # contains g and np
     prev_pos = 0
@@ -324,6 +318,6 @@ df_price_forecast = DataFrames.DataFrame(
     GB=zone_list[14],
     ES=zone_list[15],
     IT_NORD=zone_list[16],
-    DK_1=zone_list[17],
-    NO_2=zone_list[18],
+    #DK_1=zone_list[17],
+    #NO_2=zone_list[18],
 )
