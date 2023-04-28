@@ -2,11 +2,13 @@ using NPZ
 using SparseArrays
 using Plots
 using DataFrames, XLSX
+using Dates
 
-#df_ptdf = DataFrame(XLSX.readtable("./flow_based_domain/ptdf_z_reduced.xlsx", "Sheet1"))
-#df_ptdf.DateTime = DateTime.(df_ptdf.DateTime)
+zones =  ["ALBE", "ALDE", "AT", "BE", "CZ", "DE_LU", "FR", "HR", "HU", "NL", "PL", "RO", "SI", "SK"]
 
-PTDF_N = npzread("./flow_based_domain/ptdf_n.npy")
+df_ptdf = DataFrame(XLSX.readtable("./flow_based_domain/ptdf_z_obs.xlsx", "Sheet1"))
+df_ptdf.DateTime = DateTime.(df_ptdf.DateTime)
+
 GSK1_P = npzread("./flow_based_domain/gsk1_matrix_p.npy")
 GSK2_P = npzread("./flow_based_domain/gsk2_matrix_p.npy")
 GSK3_P = npzread("./flow_based_domain/gsk3_matrix_p.npy")
@@ -41,6 +43,7 @@ for t = 1:size(GSK3_P)[1]
 end
 """
 
+"""
 function plot_ptdf(line_id, zone, centring_value)
     ptdf1_line_t = Array{Float64}(undef, size(GSK1_P)[1])
     for t = 1:size(GSK1_P)[1]
@@ -61,3 +64,48 @@ end
 
 plot(df_ptdf[df_ptdf.line_id .== 815, :DateTime], df_ptdf[df_ptdf.line_id .== 815, :HU])
 plot_ptdf(800, 9, -0.026198)
+"""
+
+function generate_PTDF(line, contingency, zone, centring_value)
+    ptdf_z_obs_x = df_ptdf[(df_ptdf.line_id .== line) .& (df_ptdf.contingency .== contingency), :DateTime]
+    ptdf_z_obs_y = df_ptdf[(df_ptdf.line_id .== line) .& (df_ptdf.contingency .== contingency), zone]
+    plot(ptdf_z_obs_x, ptdf_z_obs_y)
+
+    PTDF_N = npzread("./flow_based_domain/ptdf_n/ptdf_n_$contingency.npy")
+
+    PTDF1_Z_T = Array{Matrix{Float64}}(undef, size(GSK1_P)[1])
+    for t = 1:size(GSK1_P)[1]
+        PTDF1_Z_T[t] = PTDF_N * M * GSK1_P[t, :, :]
+        println(t)
+    end
+
+    PTDF2_Z_T = Array{Matrix{Float64}}(undef, size(GSK2_P)[1])
+    for t = 1:size(GSK2_P)[1]
+        PTDF2_Z_T[t] = PTDF_N * M * GSK2_P[t, :, :]
+        println(t)
+    end
+
+    PTDF3_Z_T = Array{Matrix{Float64}}(undef, size(GSK3_P)[1])
+    for t = 1:size(GSK3_P)[1]
+        PTDF3_Z_T[t] = PTDF_N * M * GSK3_P[t, :, :]
+        println(t)
+    end
+
+    zone_i = findall(zones.==zone)[1]
+    ptdf1_line_t = Array{Float64}(undef, size(GSK1_P)[1])
+    for t = 1:size(GSK1_P)[1]
+        ptdf1_line_t[t] = PTDF1_Z_T[t][line, zone_i] + centring_value
+    end
+
+    ptdf2_line_t = Array{Float64}(undef, size(GSK2_P)[1])
+    for t = 1:size(GSK2_P)[1]
+        ptdf2_line_t[t] = PTDF2_Z_T[t][line, zone_i] + centring_value
+    end
+
+    ptdf3_line_t = Array{Float64}(undef, size(GSK3_P)[1])
+    for t = 1:size(GSK3_P)[1]
+        ptdf3_line_t[t] = PTDF3_Z_T[t][line, zone_i] + centring_value
+    end
+    plot!(twiny(), [ptdf1_line_t, ptdf2_line_t, ptdf3_line_t])
+    #plot([ptdf1_line_t, ptdf2_line_t, ptdf3_line_t])
+end
