@@ -1,4 +1,4 @@
-highs = optimizer_with_attributes(HiGHS.Optimizer, "Presolve" => 1) 
+highs = optimizer_with_attributes(HiGHS.Optimizer) 
 ipopt = optimizer_with_attributes(Ipopt.Optimizer)
 alpine = optimizer_with_attributes(Alpine.Optimizer, "nlp_solver" => ipopt, "mip_solver" => highs)
 minlp_solver = optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt)
@@ -57,7 +57,7 @@ end
 
 function optimise_gsk_strategy()
 
-    model = Model(alpine)
+    model = Model(minlp_solver)
 
     @variable(model, sigma[1:num_gsk_strategy, 1:12] >= 0)
     @constraint(model, sum(sigma, dims=1) .== 1)
@@ -72,32 +72,31 @@ function optimise_gsk_strategy()
 
     objective_function = 0
 
-    temp_line_id = 0
     s = 1
-    for cnec in eachrow(df_cnecs)[179:179]
-        cnec_zone_i = findall(zones.==cnec.zone)[1] - 2
-        println("Line id: ", cnec.line_id)
-        println("Contingency: ", cnec.contingency)
-
-        if ismissing(cnec.line_id)
-            cnec.line_id = temp_line_id
-        else
-            temp_line_id = cnec.line_id
-        end
+    for cnec in eachrow(df_cnecs)
+        cnec_zone_i = findall(zones .== cnec.zone)[1] - 2
         
         for obs in eachrow(df_ptdf[(df_ptdf.line_id .== cnec.line_id) .& (df_ptdf.contingency .== cnec.contingency), :])
             edge = df_line_edge_map[df_line_edge_map.line_id .== cnec.line_id, :edge][1]
             t = findfirst(==(obs.DateTime), df_timestamps.DateTime)
 
-            GSK_P = [GSK1_P[t, :, :]; GSK2_P[t, :, :]; GSK3_P[t, :, :]]
-            PTDF_Z = PTDF_N_C[cnec.contingency + 1] * M * sigma[:, cnec_zone_i] * GSK_P
-            
-            objective_function += sum(([values(obs[15:18])...] - PTDF_Z[edge + 1, zone_i]') .^ 2)
+            PTDF_Z = [
+                PTDF_N_C[cnec.contingency + 1] * M * GSK1_P[t, :, :];;;
+                PTDF_N_C[cnec.contingency + 1] * M * GSK2_P[t, :, :];;;
+                PTDF_N_C[cnec.contingency + 1] * M * GSK3_P[t, :, :];;;
+            ]
+
+            objective_function += sum((
+                [values(obs[5:18])...] - [sigma[:, cnec_zone_i]' * PTDF_Z[edge + 1, i, :] for i = 1:14]
+            ) .^ 2)
         end
 
+        println("NUMBER OF CNECs PROCESSED: ", s)
         s += 1
     end
 
     @NLobjective(model, Min, objective_function)
     optimize!(model)
+
+    return JuMP.value.(sigma)
 end

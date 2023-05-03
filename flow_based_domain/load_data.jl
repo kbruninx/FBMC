@@ -3,12 +3,13 @@ using SparseArrays
 using Plots
 using DataFrames, XLSX
 using Dates
-using JuMP, HiGHS, Ipopt, Alpine
+using JuMP, HiGHS, Ipopt, Alpine, Juniper
 
 zones =  ["ALBE", "ALDE", "AT", "BE", "CZ", "DE_LU", "FR", "HR", "HU", "NL", "PL", "RO", "SI", "SK"]
 
 df_ptdf = DataFrame(XLSX.readtable("./flow_based_domain/ptdf_z_obs.xlsx", "Sheet1"))
 df_ptdf.DateTime = DateTime.(df_ptdf.DateTime)
+df_ptdf = df_ptdf[df_ptdf.DateTime .<= DateTime(2023, 3, 30, 23), :]
 
 df_timestamps = DataFrame(XLSX.readtable("./flow_based_domain/timestamps.xlsx", "Sheet1"))
 df_timestamps.DateTime = DateTime.(df_timestamps.DateTime)
