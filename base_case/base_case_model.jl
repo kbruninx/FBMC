@@ -10,9 +10,10 @@ function plants_at_node(n)
 end
 
 function nodes_in_zone(zone)
-    node_ids = df_substations[df_substations.zone .== zone, :node_id]
+    node_ids = df_substations[(df_substations.zone .== zone) .& (in.(df_substations.node_id, [Set(df_substation_node_map.node_id)])), :node_id]
+    demand_keys = df_substations[(df_substations.zone .== zone) .& (in.(df_substations.node_id, [Set(df_substation_node_map.node_id)])), :demand_key]
     nodes = df_substation_node_map[in.(df_substation_node_map.node_id, [Set(node_ids)]), :node]
-    return (nodes .+ 1)
+    return [(nodes .+ 1) demand_keys]
 end
 
 function plants_zone_tech(zone, tech)
@@ -24,13 +25,19 @@ line_cap = zeros(num_l)
 for l = 1:size(H_mat)[1]
     line_id = df_line_edge_map[df_line_edge_map.edge .== l - 1, :line_id][1]
     voltage = df_grid[df_grid.line_id .== line_id, :voltage][1]
+    reactance = df_grid[df_grid.line_id .== line_id, :reactance][1]
     current = df_grid[df_grid.line_id .== line_id, :max_current][1]
+    length = df_grid[df_grid.line_id .== line_id, :length][1]
     
     if ismissing(current)
         current = 10000
     end
 
-    line_cap[l] = sqrt(3) * voltage * current * 2 / 1000
+    if length > 100
+        line_cap[l] = voltage^2/(2*reactance)
+    else
+        line_cap[l] = sqrt(3) * voltage * current / 1000
+    end
 end
 
 start_date = DateTime(2023, 2, 1)
@@ -52,18 +59,23 @@ day = 1
     for zone in zones
         z = findall(zones .== zone)[1]
         num_nodes = size(nodes_in_zone(zone))[1]
-        for n in nodes_in_zone(zone) 
-            demand[:, n] = residual_demand_t_z_day[:, z]/num_nodes # divide it evenly for now
+        for node_data in eachrow(nodes_in_zone(zone))
+            n = node_data[1]
+            demand_key = node_data[2]
+            demand[:, n] = residual_demand_t_z_day[:, z] * demand_key
         end
     end
 
     model = Model(HiGHS.Optimizer)
+    #model = Model(Gurobi.Optimizer)
     set_optimizer_attribute(model, "presolve", "on")
 
     @variable(model, g[1:num_t, 1:num_p] >= 0.0)
     @variable(model, inj[1:num_t, 1:num_n])
     @variable(model, delta[1:num_t, 1:num_n])
     @variable(model, flow[1:num_t, 1:num_l])
+
+    @constraint(model, g_max[t=1:num_t, p=1:num_p], g[t, p] <= df_plants.installed_capacity[p])
 
     @constraint(model, balance_c[t=1:num_t, n=1:num_n], demand[t, n] + inj[t, n] == sum(g[t, p] for p in plants_at_node(n)))
 
