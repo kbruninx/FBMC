@@ -66,14 +66,16 @@ day = 1
         end
     end
 
-    model = Model(HiGHS.Optimizer)
-    #model = Model(Gurobi.Optimizer)
-    set_optimizer_attribute(model, "presolve", "on")
+    #model = Model(HiGHS.Optimizer)
+    model = Model(Gurobi.Optimizer)
+    #set_optimizer_attribute(model, "presolve", "on")
 
     @variable(model, g[1:num_t, 1:num_p] >= 0.0)
     @variable(model, inj[1:num_t, 1:num_n])
     @variable(model, delta[1:num_t, 1:num_n])
     @variable(model, flow[1:num_t, 1:num_l])
+
+    @variable(model, eps_cap[1:num_l] >= 0.0)
 
     @constraint(model, g_max[t=1:num_t, p=1:num_p], g[t, p] <= df_plants.installed_capacity[p])
 
@@ -81,8 +83,10 @@ day = 1
 
     @constraint(model, flow_c[t=1:num_t, l=1:num_l], flow[t, l] == sum(H_mat[l, n] * delta[t, n] for n=1:num_n))
     @constraint(model, inj_c[t=1:num_t, n=1:num_n], inj[t, n] == sum(L_mat[n, q] * delta[t, q] for q=1:num_n))
-    @constraint(model, cap_c_max[t=1:num_t, l=1:num_l], flow[t, l] <= line_cap[l])
-    @constraint(model, cap_c_min[t=1:num_t, l=1:num_l], flow[t, l] >= -1 * line_cap[l])
+    @constraint(model, cap_c_max[t=1:num_t, l=1:num_l], flow[t, l] <= line_cap[l] + eps_cap[l])
+    @constraint(model, cap_c_min[t=1:num_t, l=1:num_l], flow[t, l] >= -1 * (line_cap[l] + eps_cap[l]))
+
+    @objective(model, Min, sum(eps_cap))
 
     global num_t_passed += num_t  
 
