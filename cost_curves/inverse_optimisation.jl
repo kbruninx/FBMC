@@ -137,10 +137,10 @@ for exp_len in experiments
     g_max_t = vcat(g_max_t_fbmc, g_max_t_non_fbmc)
 
     # for using L2-norm
-    model = Model(Gurobi.Optimizer)
+    #model = Model(Gurobi.Optimizer)
 
-    #model = Model(HiGHS.Optimizer)
-    #set_optimizer_attribute(model, "presolve", "on")
+    model = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(model, "presolve", "on")
     set_optimizer_attribute(model, "time_limit", 180.0)
 
     @variable(model, c[1:(num_z+num_z_non_fbmc)*num_tech*num_t] >= 0)
@@ -295,14 +295,15 @@ for exp_len in experiments
     @constraint(model, epsilon_duality_abs <= epsilon_duality)
     @constraint(model, -1*epsilon_duality_abs <= epsilon_duality)
 
-    #@constraint(model, lambda .- lambda_obs .== eps1 .- eps2) # for L1 norm
+    @constraint(model, lambda .- lambda_obs .== eps1 .- eps2) # for L1 norm
 
     u = ones((num_z+num_z_non_fbmc)*num_t)
  
     #@objective(model, Min, sum((lambda - lambda_obs) .^ 2)) # L2 norm only
     #@objective(model, Min, eps1' * u + eps2' * u) # L1 norm only
-    #@objective(model, Min, eps1' * u + eps2' * u + epsilon_duality) # L1 norm and duality gap minimisation
-    @objective(model, Min, sum((lambda - lambda_obs) .^ 2) + epsilon_duality) # L2 norm and duality gap minimisation
+
+    @objective(model, Min, eps1' * u + eps2' * u + epsilon_duality) # L1 norm and duality gap minimisation
+    #@objective(model, Min, sum((lambda - lambda_obs) .^ 2) + epsilon_duality) # L2 norm and duality gap minimisation
 
     # iteratively adjust upon the previous values
     global num_t_passed += exp_len 
@@ -333,4 +334,4 @@ coefficients_data = Dict(
     "timestamps" => experiment_results_timestamp
 )
 
-save("coefficients_norm_2_duality_gap_w_atc.jld", "data", coefficients_data)
+save("coefficients_norm_1_duality_gap_w_atc.jld", "data", coefficients_data)
