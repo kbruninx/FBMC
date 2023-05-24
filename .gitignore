@@ -7,3 +7,9 @@ flow_based_domain/gsk1_matrix_p.npy
 flow_based_domain/gsk2_matrix_p.npy
 flow_based_domain/gsk3_matrix_p.npy
 flow_based_domain/gsk5_matrix_p.npy
+flow_based_domain/gsk4_matrix_p.jld
+flow_based_domain/gsk5_matrix_p.jld
+base_case/ref_flow_nuts.jld
+base_case/ref_flow.jld
+base_case/ref_g_nuts.jld
+base_case/ref_g.jld

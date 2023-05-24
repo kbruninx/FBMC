@@ -6,6 +6,7 @@ using LinearAlgebra
 using Statistics
 using SparseArrays
 using Formatting
+using StatsBase
 
 function sum_z_np(np, num_t)
     result = []
@@ -48,15 +49,25 @@ function get_atc_ex_2(b, t)
 end
 
 scenario_names = [
-    "norm_1_duality_gap_w_atc",
+    #"norm_1_duality_gap_w_atc",
     "norm_1_w_atc",
-    "norm_2_duality_gap_w_atc",
+    #"norm_2_duality_gap_w_atc",
     "norm_2_w_atc",
 ]
 
 months = ["november", "february"]
+#months = ["february"]
 
 for scenario_name in scenario_names
+
+    coefficients_data = load(string("coefficients_", scenario_name, ".jld"))["data"]
+    experiment_results_alpha = coefficients_data["alpha"]
+    experiment_results_beta = coefficients_data["beta"]
+    experiment_results_gamma = coefficients_data["gamma"]
+    experiment_results_objective = coefficients_data["objective"]
+    experiment_results_timestamp = coefficients_data["timestamps"]
+    objective_weights = 1 .- normalize(experiment_results_objective)
+
     for month in months
 
         if month == "november"
@@ -72,13 +83,6 @@ for scenario_name in scenario_names
         num_t_passed = findfirst(t->t == start_date, timestamps)
         num_t = 24
         day_count = Dates.value(convert(Dates.Day, end_date - start_date))
-
-        coefficients_data = load(string("coefficients_", scenario_name, ".jld"))["data"]
-        experiment_results_alpha = coefficients_data["alpha"]
-        experiment_results_beta = coefficients_data["beta"]
-        experiment_results_gamma = coefficients_data["gamma"]
-        experiment_results_objective = coefficients_data["objective"]
-        experiment_results_timestamp = coefficients_data["timestamps"]
 
         price_forecasts = []
 
@@ -111,9 +115,13 @@ for scenario_name in scenario_names
                     beta_exp = convert(Vector{Float64}, beta_exp)
                     gamma_exp = convert(Vector{Float64}, gamma_exp)
 
-                    alpha_mean = mean(alpha_exp[findall(!iszero, alpha_exp)])
-                    beta_mean = mean(beta_exp[findall(!iszero, beta_exp)])
-                    gamma_mean = mean(gamma_exp[findall(!iszero, gamma_exp)])
+                    #alpha_mean = mean(alpha_exp[findall(!iszero, alpha_exp)])
+                    #beta_mean = mean(beta_exp[findall(!iszero, beta_exp)])
+                    #gamma_mean = mean(gamma_exp[findall(!iszero, gamma_exp)])
+
+                    alpha_mean = mean(alpha_exp[findall(!iszero, alpha_exp)], Weights(objective_weights[findall(!iszero, alpha_exp)]))
+                    beta_mean = mean(beta_exp[findall(!iszero, beta_exp)], Weights(objective_weights[findall(!iszero, beta_exp)]))
+                    gamma_mean = mean(gamma_exp[findall(!iszero, gamma_exp)], Weights(objective_weights[findall(!iszero, gamma_exp)]))
 
                     if !isnan(alpha_mean)
                         alpha_coeffs[tech] = alpha_mean
@@ -162,11 +170,6 @@ for scenario_name in scenario_names
             demand_fbmc = vec(demand_g[(num_t_passed+1):(num_t_passed)+num_t, :])
             demand_non_fbmc = vec(demand_g_non_fbmc[(num_t_passed+1):(num_t_passed)+num_t, :])
             demand = vcat(demand_fbmc, demand_non_fbmc)
-
-            ptdf_z = vec(ptdf_z_g[(num_t_passed*num_j+1):(num_t_passed*num_j)+num_t*num_j, :])
-            ram = vec(ram_g[(num_t_passed*num_j+1):(num_t_passed*num_j)+num_t*num_j, :])
-            ptdf_z = convert(Vector{Float64}, ptdf_z)
-            ram = convert(Vector{Float64}, ram)
 
             ren_gen_fbmc = vec(ren_gen_g[(num_t_passed+1):(num_t_passed)+num_t, :])
             ren_gen_non_fbmc = vec(ren_gen_g_non_fbmc[(num_t_passed+1):(num_t_passed)+num_t, :])
@@ -310,17 +313,21 @@ for scenario_name in scenario_names
                 end
             end
 
+            B_exchange_temp = spzeros(num_j*num_t, num_z*num_t)
             b1_exchange = spzeros(num_t)
 
-            B_exchange_temp = spzeros(num_j*num_t, num_z*num_t)
-
+            ram = spzeros(num_j*num_t)
             for t in 1:num_t
-                for j in 1:num_j
+                df_ptdf_h = df_ptdf[df_ptdf.DateTime .== timestamps[num_t_passed+t], :]
+                for j in 1:size(df_ptdf_h)[1]
                     for z in 1:num_z
-                        B_exchange_temp[num_t*(j-1)+t, num_t*(z-1)+t] = ptdf_z[num_j*num_t*(z-1) + num_j*(t-1) + j]
+                        B_exchange_temp[num_t*(j-1)+t, num_t*(z-1)+t] = df_ptdf_h[j, fbmc_zones[z]]
+                        ram[num_t*(j-1)+t] = df_ptdf_h[j, :ram]
                     end
                 end
             end
+            
+            ram = convert(Vector{Float64}, ram)
             B_exchange_ptdf = sparse(cat(spzeros(num_j*num_t, total_num_bid), B_exchange_temp, spzeros(num_j*num_t, 2*num_atc_border*num_t); dims=(2)))
             
             B_exchange_atc = spzeros(2*num_atc_border*num_t, total_num_bid + num_z*num_t + 2*num_atc_border*num_t)

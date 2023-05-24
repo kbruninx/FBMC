@@ -42,7 +42,6 @@ xf_fuel_prices = XLSX.readxlsx("./data/fuel_prices.xlsx")
 xf_generation = XLSX.readxlsx("./data/generation.xlsx")
 xf_ren_gen = XLSX.readxlsx("./data/renewable_generation.xlsx")
 xf_netpos = XLSX.readxlsx("./data/net_positions.xlsx")
-xf_ptdf = XLSX.readxlsx("./data/ptdfs.xlsx")
 xf_capacities = XLSX.readxlsx("./data/installed_capacities.xlsx")
 xf_generation_outages = XLSX.readxlsx("./data/generation_outages.xlsx")
 
@@ -115,9 +114,6 @@ lambda_obs_g_non_fbmc = remove_missing(xf_da_prices_non_fbmc["Sheet1"][sprintf1(
 
 np_obs_g = remove_missing(xf_netpos["Sheet1"][sprintf1("B2:O%d", num_train_t+1)]) # [z+t]
 
-ptdf_z_g = remove_missing(xf_ptdf["Sheet1"][sprintf1("D2:Q%d", num_train_t*num_j+1)])
-ram_g = remove_missing(xf_ptdf["Sheet1"][sprintf1("C2:C%d", num_train_t*num_j+1)])
-
 g_max_g = vec(xf_capacities["Sheet1"]["B2:O11"]) # [z+tech]
 g_max_g_non_fbmc = vec(xf_capacities_non_fbmc["Sheet1"]["B2:E11"]) # [z+tech]
 
@@ -125,3 +121,6 @@ ren_gen_g = remove_missing(xf_ren_gen["Sheet1"][sprintf1("B2:O%d", num_train_t+1
 ren_gen_g_non_fbmc = remove_missing(xf_ren_gen_non_fbmc["Sheet1"][sprintf1("B2:E%d", num_train_t+1)]) # [z+t]
 
 timestamps = DateTime.(vec(remove_missing(xf_demand["Sheet1"][sprintf1("A2:A%d", num_train_t+1)]))) 
+
+df_ptdf = DataFrame(XLSX.readtable("./data/ptdfs.xlsx", "Sheet1"))
+df_ptdf.DateTime = DateTime.(df_ptdf.DateTime)

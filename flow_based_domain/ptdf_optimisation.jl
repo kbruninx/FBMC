@@ -84,6 +84,8 @@ function optimise_gsk_strategy()
                 PTDF_N_C[cnec.contingency + 1] * M * GSK1_P[t, :, :];;;
                 PTDF_N_C[cnec.contingency + 1] * M * GSK2_P[t, :, :];;;
                 PTDF_N_C[cnec.contingency + 1] * M * GSK3_P[t, :, :];;;
+                PTDF_N_C[cnec.contingency + 1] * M * GSK4_P[t, :, :];;;
+                PTDF_N_C[cnec.contingency + 1] * M * GSK5_P[t, :, :];;;
             ]
 
             objective_function += sum((

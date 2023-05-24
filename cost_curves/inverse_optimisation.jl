@@ -105,11 +105,6 @@ for exp_len in experiments
     lambda_obs = convert(Vector{Float64}, lambda_obs)
     np_obs = convert(Vector{Float64}, np_obs)
 
-    ptdf_z = vec(ptdf_z_g[(num_t_passed*num_j+1):(num_t_passed*num_j)+num_t*num_j, :])
-    ram = vec(ram_g[(num_t_passed*num_j+1):(num_t_passed*num_j)+num_t*num_j, :])
-    ptdf_z = convert(Vector{Float64}, ptdf_z)
-    ram = convert(Vector{Float64}, ram)
-
     ren_gen_fbmc = vec(ren_gen_g[(num_t_passed+1):(num_t_passed)+num_t, :])
     ren_gen_non_fbmc = vec(ren_gen_g_non_fbmc[(num_t_passed+1):(num_t_passed)+num_t, :])
     ren_gen = vcat(ren_gen_fbmc, ren_gen_non_fbmc)
@@ -137,11 +132,11 @@ for exp_len in experiments
     g_max_t = vcat(g_max_t_fbmc, g_max_t_non_fbmc)
 
     # for using L2-norm
-    #model = Model(Gurobi.Optimizer)
+    model = Model(Gurobi.Optimizer)
 
-    model = Model(HiGHS.Optimizer)
-    set_optimizer_attribute(model, "presolve", "on")
-    set_optimizer_attribute(model, "time_limit", 180.0)
+    #model = Model(HiGHS.Optimizer)
+    #set_optimizer_attribute(model, "presolve", "on")
+    #set_optimizer_attribute(model, "time_limit", 180.0)
 
     @variable(model, c[1:(num_z+num_z_non_fbmc)*num_tech*num_t] >= 0)
 
@@ -247,14 +242,18 @@ for exp_len in experiments
     b1_exchange = spzeros(num_t)
 
     B_exchange_temp = spzeros(num_j*num_t, num_z*num_t)
-
+    ram = spzeros(num_j*num_t)
     for t in 1:num_t
-        for j in 1:num_j
+        df_ptdf_h = df_ptdf[df_ptdf.DateTime .== timestamps[num_t_passed+t], :]
+        for j in 1:size(df_ptdf_h)[1]
             for z in 1:num_z
-                B_exchange_temp[num_t*(j-1)+t, num_t*(z-1)+t] = ptdf_z[num_j*num_t*(z-1) + num_j*(t-1) + j]
+                B_exchange_temp[num_t*(j-1)+t, num_t*(z-1)+t] = df_ptdf_h[j, fbmc_zones[z]]
+                ram[num_t*(j-1)+t] = df_ptdf_h[j, :ram]
             end
         end
     end
+    
+    ram = convert(Vector{Float64}, ram)
     B_exchange_ptdf = sparse(cat(spzeros(num_j*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t), B_exchange_temp, spzeros(num_j*num_t, 2*num_atc_border*num_t); dims=(2)))
     
     B_exchange_atc = spzeros(2*num_atc_border*num_t, (num_z+num_z_non_fbmc)*num_tech*num_t + num_z*num_t + 2*num_atc_border*num_t)
@@ -295,15 +294,15 @@ for exp_len in experiments
     @constraint(model, epsilon_duality_abs <= epsilon_duality)
     @constraint(model, -1*epsilon_duality_abs <= epsilon_duality)
 
-    @constraint(model, lambda .- lambda_obs .== eps1 .- eps2) # for L1 norm
+    #@constraint(model, lambda .- lambda_obs .== eps1 .- eps2) # for L1 norm
 
     u = ones((num_z+num_z_non_fbmc)*num_t)
  
     #@objective(model, Min, sum((lambda - lambda_obs) .^ 2)) # L2 norm only
     #@objective(model, Min, eps1' * u + eps2' * u) # L1 norm only
 
-    @objective(model, Min, eps1' * u + eps2' * u + epsilon_duality) # L1 norm and duality gap minimisation
-    #@objective(model, Min, sum((lambda - lambda_obs) .^ 2) + epsilon_duality) # L2 norm and duality gap minimisation
+    #@objective(model, Min, eps1' * u + eps2' * u + epsilon_duality) # L1 norm and duality gap minimisation
+    @objective(model, Min, sum((lambda - lambda_obs) .^ 2) + epsilon_duality) # L2 norm and duality gap minimisation
 
     # iteratively adjust upon the previous values
     global num_t_passed += exp_len 
@@ -311,7 +310,7 @@ for exp_len in experiments
     try
         optimize!(model)
 
-        if termination_status(model) == OPTIMAL
+        if termination_status(model) == OPTIMAL || termination_status(model) == LOCALLY_SOLVED || termination_status(model) == ALMOST_OPTIMAL || termination_status(model) == ALMOST_LOCALLY_SOLVED
             println("ITERATION ", iteration_count, " FOUND OPTIMAL SOLUTION")
             push!(experiment_results_alpha, JuMP.value.(alpha))
             push!(experiment_results_beta, JuMP.value.(beta))
@@ -334,4 +333,4 @@ coefficients_data = Dict(
     "timestamps" => experiment_results_timestamp
 )
 
-save("coefficients_norm_1_duality_gap_w_atc.jld", "data", coefficients_data)
+save("coefficients_norm_2_duality_gap_w_atc.jld", "data", coefficients_data)

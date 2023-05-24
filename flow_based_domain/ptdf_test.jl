@@ -82,12 +82,7 @@ plot(df_ptdf[df_ptdf.line_id .== 815, :DateTime], df_ptdf[df_ptdf.line_id .== 81
 plot_ptdf(800, 9, -0.026198)
 """
 
-#function generate_PTDF(line, edge_number, contingency, zone, centring_value)
-    line = 2813
-    edge_number = 792
-    contingency = 16
-    zone = "SK"
-    centring_value = 0
+function generate_PTDF(line, edge_number, contingency, zone, centring_value)
     ptdf_z_obs_x = df_ptdf[(df_ptdf.line_id .== line) .& (df_ptdf.contingency .== contingency) .& (df_ptdf.DateTime .>= start_date) .& (df_ptdf.DateTime .<= end_date), :DateTime]
     ptdf_z_obs_y = df_ptdf[(df_ptdf.line_id .== line) .& (df_ptdf.contingency .== contingency) .& (df_ptdf.DateTime .>= start_date) .& (df_ptdf.DateTime .<= end_date), zone]
     plot(ptdf_z_obs_x, ptdf_z_obs_y)
@@ -152,4 +147,4 @@ plot_ptdf(800, 9, -0.026198)
 
     plot!(twiny(), [ptdf1_line_t, ptdf2_line_t, ptdf3_line_t, ptdf4_line_t, ptdf5_line_t])
     #plot([ptdf1_line_t, ptdf2_line_t, ptdf3_line_t, ptdf5_line_t])
-#end
+end

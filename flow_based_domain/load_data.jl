@@ -21,6 +21,8 @@ df_line_edge_map = DataFrame(XLSX.readtable("./flow_based_domain/line_edge_map.x
 GSK1_P = npzread("./flow_based_domain/gsk1_matrix_p.npy")
 GSK2_P = npzread("./flow_based_domain/gsk2_matrix_p.npy")
 GSK3_P = npzread("./flow_based_domain/gsk3_matrix_p.npy")
+GSK4_P = load("./flow_based_domain/gsk4_matrix_p.jld")["data"]
+GSK5_P = load("./flow_based_domain/gsk5_matrix_p.jld")["data"]
 O = npzread("./flow_based_domain/omega_matrix.npy")
 
 PTDF_N_C = Array{Matrix{Float64}}(undef, size(df_contingencies)[1])
@@ -28,4 +30,4 @@ for i = 1:size(df_contingencies)[1]
     PTDF_N_C[i] = npzread("./flow_based_domain/ptdf_n/ptdf_n_$(i-1).npy")
 end
 
-num_gsk_strategy = 3
+num_gsk_strategy = 5
