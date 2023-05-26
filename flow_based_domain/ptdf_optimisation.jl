@@ -76,9 +76,9 @@ function optimise_gsk_strategy()
     for cnec in eachrow(df_cnecs)
         cnec_zone_i = findall(zones .== cnec.zone)[1] - 2
         
-        for obs in eachrow(df_ptdf[(df_ptdf.line_id .== cnec.line_id) .& (df_ptdf.contingency .== cnec.contingency), :])
+        for obs in eachrow(df_ptdf[(df_ptdf.line_id .== cnec.line_id) .& (df_ptdf.contingency .== cnec.contingency) .& (df_ptdf.DateTime .>= start_date) .& (df_ptdf.DateTime .< end_date), :])
             edge = df_line_edge_map[df_line_edge_map.line_id .== cnec.line_id, :edge][1]
-            t = findfirst(==(obs.DateTime), df_timestamps.DateTime)
+            t = findfirst(==(obs.DateTime), df_timestamps[(df_timestamps.DateTime .>= start_date) .& (df_timestamps.DateTime .< end_date), :].DateTime)
 
             PTDF_Z = [
                 PTDF_N_C[cnec.contingency + 1] * M * GSK1_P[t, :, :];;;

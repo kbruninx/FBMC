@@ -52,11 +52,13 @@ scenario_names = [
     #"norm_1_duality_gap_w_atc",
     "norm_1_w_atc",
     #"norm_2_duality_gap_w_atc",
-    "norm_2_w_atc",
+    #"norm_2_w_atc",
 ]
 
-months = ["november", "february"]
-#months = ["february"]
+months = [
+    #"november", 
+    "february"
+]
 
 for scenario_name in scenario_names
 
@@ -85,6 +87,7 @@ for scenario_name in scenario_names
         day_count = Dates.value(convert(Dates.Day, end_date - start_date))
 
         price_forecasts = []
+        np_forecasts = []
 
         current_date = start_date
         for day in 1:day_count
@@ -369,8 +372,10 @@ for scenario_name in scenario_names
             try
                 optimize!(model)
                 push!(price_forecasts, JuMP.dual.(balance))
+                push!(np_forecasts, JuMP.value.(np))
             catch e
                 push!(price_forecasts, zeros((num_z+num_z_non_fbmc)*num_t))
+                push!(np_forecasts, zeros(num_z*num_t))
                 println("ERROR ENCOUNTERED")
             end
 
@@ -379,6 +384,8 @@ for scenario_name in scenario_names
         end
 
         zone_list = []
+        np_zone_list = []
+
         for z in 3:(num_z+num_z_non_fbmc)
             prices = []
             for d in 1:day_count
@@ -387,6 +394,16 @@ for scenario_name in scenario_names
                 end
             end
             push!(zone_list, prices)
+        end
+
+        for z in 3:num_z
+            nps = []
+            for d in 1:day_count
+                for t in 1:num_t
+                    push!(nps, np_forecasts[d][num_t*(z-1)+t])
+                end
+            end
+            push!(np_zone_list, nps)
         end
 
         df_price_forecast = DataFrames.DataFrame(
@@ -408,7 +425,23 @@ for scenario_name in scenario_names
             IT_NORD=zone_list[16],
         )
 
-        XLSX.writetable(string("price_forecast_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
+        df_np_forecast = DataFrames.DataFrame(
+            AT=np_zone_list[1],
+            BE=np_zone_list[2],
+            CZ=np_zone_list[3],
+            DE_LU=np_zone_list[4],
+            FR=np_zone_list[5],
+            HR=np_zone_list[6],
+            HU=np_zone_list[7],
+            NL=np_zone_list[8],
+            PL=np_zone_list[9],
+            RO=np_zone_list[10],
+            SI=np_zone_list[11],
+            SK=np_zone_list[12],
+        )
+
+        XLSX.writetable(string("price_forecast_full_naive_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
+        XLSX.writetable(string("np_forecast_full_naive_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
 
     end
 end
