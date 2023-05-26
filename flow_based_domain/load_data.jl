@@ -28,10 +28,11 @@ GSK1_P = npzread("./flow_based_domain/gsk1_matrix_p.npy")
 GSK2_P = npzread("./flow_based_domain/gsk2_matrix_p.npy")
 GSK3_P = npzread("./flow_based_domain/gsk3_matrix_p.npy")
 
-start_date = DateTime(2022, 9, 11)
-#start_date = DateTime(2023, 2, 1)
+#start_date = DateTime(2022, 9, 11)
+start_date = DateTime(2023, 2, 1)
 end_date = DateTime(2023, 3, 1)
 start_t = findfirst(==(start_date), df_timestamps.DateTime)
+start_t_bc = start_t - Dates.value(convert(Dates.Hour, DateTime(2022, 9, 11) - DateTime(2022, 9, 1)))
 hour_count = Dates.value(convert(Dates.Hour, end_date - start_date))
 
 GSK1_P = GSK1_P[start_t:(start_t+hour_count-1), :, :]
@@ -40,6 +41,9 @@ GSK3_P = GSK3_P[start_t:(start_t+hour_count-1), :, :]
 
 GSK4_P = load("./flow_based_domain/gsk4_matrix_p.jld")["data"]
 GSK5_P = load("./flow_based_domain/gsk5_matrix_p.jld")["data"]
+
+GSK4_P = GSK4_P[start_t_bc:(start_t_bc+hour_count-1), :, :]
+GSK5_P = GSK5_P[start_t_bc:(start_t_bc+hour_count-1), :, :]
 
 O = npzread("./flow_based_domain/omega_matrix.npy")
 
