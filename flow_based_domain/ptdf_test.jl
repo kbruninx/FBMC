@@ -1,6 +1,7 @@
 using NPZ
 using SparseArrays
 using Plots
+using Plots.PlotMeasures
 using DataFrames, XLSX
 using Dates
 
@@ -82,11 +83,17 @@ plot(df_ptdf[df_ptdf.line_id .== 815, :DateTime], df_ptdf[df_ptdf.line_id .== 81
 plot_ptdf(800, 9, -0.026198)
 """
 
-function generate_PTDF(line, edge_number, contingency, zone, centring_value)
+function generate_PTDF(line, contingency)
+    edge_number = df_line_edge_map[df_line_edge_map.line_id .== line, :edge][1]
+    zone = df_grid[df_grid.line_id .== line, :zone][1]
     ptdf_z_obs_x = df_ptdf[(df_ptdf.line_id .== line) .& (df_ptdf.contingency .== contingency) .& (df_ptdf.DateTime .>= start_date) .& (df_ptdf.DateTime .<= end_date), :DateTime]
     ptdf_z_obs_y = df_ptdf[(df_ptdf.line_id .== line) .& (df_ptdf.contingency .== contingency) .& (df_ptdf.DateTime .>= start_date) .& (df_ptdf.DateTime .<= end_date), zone]
     plot(ptdf_z_obs_x, ptdf_z_obs_y)
 
+    if contingency == -1
+        contingency = 0
+    end
+    """
     PTDF_N = npzread("./flow_based_domain/ptdf_n/ptdf_n_$contingency.npy")
 
     PTDF1_Z_T = Array{Matrix{Float64}}(undef, size(GSK1_P)[1])
@@ -122,29 +129,100 @@ function generate_PTDF(line, edge_number, contingency, zone, centring_value)
     zone_i = findall(zones.==zone)[1]
     ptdf1_line_t = Array{Float64}(undef, size(GSK1_P)[1])
     for t = 1:size(GSK1_P)[1]
-        ptdf1_line_t[t] = PTDF1_Z_T[t][edge_number + 1, zone_i]# + centring_value
+        ptdf1_line_t[t] = PTDF1_Z_T[t][edge_number + 1, zone_i]
     end
 
     ptdf2_line_t = Array{Float64}(undef, size(GSK2_P)[1])
     for t = 1:size(GSK2_P)[1]
-        ptdf2_line_t[t] = PTDF2_Z_T[t][edge_number + 1, zone_i]# + centring_value
+        ptdf2_line_t[t] = PTDF2_Z_T[t][edge_number + 1, zone_i]
     end
 
     ptdf3_line_t = Array{Float64}(undef, size(GSK3_P)[1])
     for t = 1:size(GSK3_P)[1]
-        ptdf3_line_t[t] = PTDF3_Z_T[t][edge_number + 1, zone_i]# + centring_value
+        ptdf3_line_t[t] = PTDF3_Z_T[t][edge_number + 1, zone_i]
     end
 
     ptdf4_line_t = Array{Float64}(undef, size(GSK4_P)[1])
     for t = 1:size(GSK4_P)[1]
-        ptdf4_line_t[t] = PTDF4_Z_T[t][edge_number + 1, zone_i]# + centring_value
+        ptdf4_line_t[t] = PTDF4_Z_T[t][edge_number + 1, zone_i]
     end
 
     ptdf5_line_t = Array{Float64}(undef, size(GSK5_P)[1])
     for t = 1:size(GSK5_P)[1]
-        ptdf5_line_t[t] = PTDF5_Z_T[t][edge_number + 1, zone_i]# + centring_value
+        ptdf5_line_t[t] = PTDF5_Z_T[t][edge_number + 1, zone_i]
     end
 
     plot!(twiny(), [ptdf1_line_t, ptdf2_line_t, ptdf3_line_t, ptdf4_line_t, ptdf5_line_t])
     #plot([ptdf1_line_t, ptdf2_line_t, ptdf3_line_t, ptdf5_line_t])
+    #plot!(twiny(), [ptdf5_line_t])
+    #plot!(twiny(), [ptdf1_line_t, ptdf5_line_t])
+    """
 end
+
+line = 694
+edge_number = df_line_edge_map[df_line_edge_map.line_id .== line, :edge][1]
+zone = df_grid[df_grid.line_id .== line, :zone][1]
+eic = df_grid[df_grid.line_id .== line, :eic][1]
+if zone == "DE"
+    zone = "DE_LU"
+end
+ptdf_z_obs_x = df_ptdf[(df_ptdf.line_id .== line) .& (df_ptdf.contingency .== contingency) .& (df_ptdf.DateTime .>= start_date) .& (df_ptdf.DateTime .<= end_date), :DateTime]
+ptdf_z_obs_y = df_ptdf[(df_ptdf.line_id .== line) .& (df_ptdf.contingency .== contingency) .& (df_ptdf.DateTime .>= start_date) .& (df_ptdf.DateTime .<= end_date), zone]
+
+zone_i = findall(zones.==zone)[1]
+ptdf1_line_t = Array{Float64}(undef, size(GSK1_P)[1])
+for t = 1:size(GSK1_P)[1]
+    ptdf1_line_t[t] = PTDF1_Z_T[t][edge_number + 1, zone_i]
+end
+
+ptdf2_line_t = Array{Float64}(undef, size(GSK2_P)[1])
+for t = 1:size(GSK2_P)[1]
+    ptdf2_line_t[t] = PTDF2_Z_T[t][edge_number + 1, zone_i]
+end
+
+ptdf3_line_t = Array{Float64}(undef, size(GSK3_P)[1])
+for t = 1:size(GSK3_P)[1]
+    ptdf3_line_t[t] = PTDF3_Z_T[t][edge_number + 1, zone_i]
+end
+
+ptdf4_line_t = Array{Float64}(undef, size(GSK4_P)[1])
+for t = 1:size(GSK4_P)[1]
+    ptdf4_line_t[t] = PTDF4_Z_T[t][edge_number + 1, zone_i]
+end
+
+ptdf5_line_t = Array{Float64}(undef, size(GSK5_P)[1])
+for t = 1:size(GSK5_P)[1]
+    ptdf5_line_t[t] = PTDF5_Z_T[t][edge_number + 1, zone_i]
+end
+
+pl1 = scatter(
+    ptdf_z_obs_x, ptdf_z_obs_y, 
+    label="observation", 
+    title="Zonal PTDF: observation and calculations with different GSKs \n("*zone*", "*eic*")", 
+    titlefont = font(10,"Computer Modern"),
+    xlabel="Time [days] (hourly resolution)",
+    ylabel="PTDF [-]",
+    xguidefontsize=9,
+    yguidefontsize=9,
+    xtickfontsize=8,
+    markercolor = :red,
+    markerstrokecolor = :red,
+    markersize = 1,
+    legend=:topright,
+    margin=5mm,
+    size=(1000,600)
+)
+pl2 = plot!(
+    twiny(), 
+    -2*[
+        ptdf1_line_t .+ 0.1, ptdf2_line_t .+ 0.1, ptdf3_line_t .+ 0.1, 
+        #ptdf4_line_t,
+        #ptdf5_line_t,
+    ],
+    label=["GSK1" "GSK2" "GKS3" "GSK4" "GSK5"],
+    legend=:topleft,
+    xaxis=false
+)
+
+
+savefig("./figures/flow_based_domain/ptdf_nl_1.png")
