@@ -121,7 +121,7 @@ ren_gen_g_non_fbmc = remove_missing(xf_ren_gen_non_fbmc["Sheet1"][sprintf1("B2:E
 
 timestamps = DateTime.(vec(remove_missing(xf_demand["Sheet1"][sprintf1("A2:A%d", num_train_t+1)]))) 
 
-df_ptdf = DataFrame(XLSX.readtable("../flow_based_domain/ptdf_z_calc_nuts_feb.xlsx", "Sheet1"))
+df_ptdf = DataFrame(XLSX.readtable("../flow_based_domain/ptdf_z_calc_nuts_feb_tso.xlsx", "Sheet1"))
 df_ptdf.DateTime = DateTime.(df_ptdf.DateTime)
 
-num_j = maximum(combine(gdf, :line_id => length)[:, :line_id_length])
+num_j = maximum(combine(groupby(df_ptdf, :DateTime), :line_id => length)[:, :line_id_length])

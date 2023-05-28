@@ -440,8 +440,8 @@ for scenario_name in scenario_names
             SK=np_zone_list[12],
         )
 
-        XLSX.writetable(string("price_forecast_full_tie_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
-        XLSX.writetable(string("np_forecast_full_tie_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
+        XLSX.writetable(string("price_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
+        XLSX.writetable(string("np_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
 
     end
 end

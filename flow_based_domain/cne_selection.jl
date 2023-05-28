@@ -1,4 +1,4 @@
-alpha = 0.1
+alpha = 0.04
 sigma = load("./flow_based_domain/sigma_nuts.jld")["data"]
 
 M = zeros(size(O)[2], size(O)[1])
@@ -35,7 +35,7 @@ for t in 1:hour_count
     for l = 1:num_l
         line_id = df_line_edge_map[df_line_edge_map.edge .== l - 1, :line_id][1]
         zone = df_grid[df_grid.line_id .== line_id, :zone][1]
-        tieline = df_grid[df_grid.line_id .== line_id, :tieline][1] && df_grid[df_grid.line_id .== line_id, :eic][1][1:4] == "10T-"
+        #tieline = df_grid[df_grid.line_id .== line_id, :tieline][1] && df_grid[df_grid.line_id .== line_id, :eic][1][1:4] == "10T-"
 
         z = findfirst(==(zone), countries)
         PTDF_Z = PTDF_Z_z[z]
@@ -46,15 +46,15 @@ for t in 1:hour_count
         ptdf_l_z_others = [PTDF_Z[l, z_i] for z_i in z_others]
 
         is_cne = false
-        if tieline
-            is_cne = true
-        else
-            for ptdf_l_z_i in ptdf_l_z_others
-                if abs(ptdf_l_z - ptdf_l_z_i) >= alpha
-                    is_cne = true
-                end
+        #if tieline
+        #    is_cne = true
+        #else
+        for ptdf_l_z_i in ptdf_l_z_others
+            if abs(ptdf_l_z - ptdf_l_z_i) >= alpha
+                is_cne = true
             end
         end
+        #end
 
         if is_cne
             timestamp = df_timestamps[start_t + t, :DateTime]
@@ -63,4 +63,4 @@ for t in 1:hour_count
     end
 end
 
-XLSX.writetable("./flow_based_domain/ptdf_z_calc_nuts_feb.xlsx", "Sheet1" => df_ptdf_calc)
+XLSX.writetable("./flow_based_domain/ptdf_z_calc_nuts_feb_4.xlsx", "Sheet1" => df_ptdf_calc)
