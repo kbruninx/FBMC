@@ -8,6 +8,7 @@ using Formatting
 using Polyhedra, CDDLib
 using JLD
 using LaTeXStrings
+using Plots
 
 zones =  ["AT", "BE", "CZ", "DE_LU", "FR", "HR", "HU", "NL", "PL", "RO", "SI", "SK"]
 

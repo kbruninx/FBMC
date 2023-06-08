@@ -5,6 +5,7 @@ using LinearAlgebra
 using Statistics
 using SparseArrays
 using Formatting
+using NPZ
 
 function remove_missing(mx)
     mx[ismissing.(mx)] .= 0.0
@@ -125,3 +126,5 @@ df_ptdf = DataFrame(XLSX.readtable("../flow_based_domain/ptdf_z_calc_nuts_feb_ts
 df_ptdf.DateTime = DateTime.(df_ptdf.DateTime)
 
 num_j = maximum(combine(groupby(df_ptdf, :DateTime), :line_id => length)[:, :line_id_length])
+
+plant_eff = npzread("./plant_efficiencies.npy")
