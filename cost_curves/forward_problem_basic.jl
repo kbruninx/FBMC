@@ -56,8 +56,8 @@ scenario_names = [
 ]
 
 months = [
-    #"november", 
-    "february"
+    "november", 
+    #"february"
 ]
 
 for scenario_name in scenario_names
@@ -394,7 +394,7 @@ for scenario_name in scenario_names
                 end
             end
         end
-        save("./generation_forecasts/basic_a10.jld", "data", generation_matrix)
+        save("./generation_forecasts/basic_a10_nov.jld", "data", generation_matrix)
 
     end
 end
