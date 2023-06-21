@@ -60,7 +60,9 @@ months = [
     "february"
 ]
 
-for scenario_name in scenario_names
+scenario_name = "norm_1_w_atc"
+month = "february"
+#for scenario_name in scenario_names
 
     coefficients_data = load(string("coefficients_", scenario_name, ".jld"))["data"]
     experiment_results_alpha = coefficients_data["alpha"]
@@ -70,7 +72,7 @@ for scenario_name in scenario_names
     experiment_results_timestamp = coefficients_data["timestamps"]
     objective_weights = 1 .- normalize(experiment_results_objective)
 
-    for month in months
+    #for month in months
 
         if month == "november"
             # November
@@ -89,6 +91,7 @@ for scenario_name in scenario_names
         price_forecasts = []
         np_forecasts = []
         generation_forecasts = []
+        block_bids_d = []
 
         current_date = start_date
         for day in 1:day_count
@@ -211,10 +214,12 @@ for scenario_name in scenario_names
                 for z in 1:(num_z+num_z_non_fbmc)
                     block_bids_zone_volumes = []
                     block_bids_zone_prices = []
+                    block_bids_zone_tech = []
                     for tech in 1:num_tech
                         prices = []
                         volumes = []
                         positions = []
+                        tech_vec = []
 
                         block_width = floor(g_max_t[num_t*num_tech*(z-1)+num_t*(tech-1)+t]/max_block_amount_per_tech)
                         if block_width < 5
@@ -240,15 +245,18 @@ for scenario_name in scenario_names
                             push!(volumes, next_pos - vol_pos)
                             push!(prices, price)
                             push!(positions, calc_pos)
+                            push!(tech_vec, tech)
                             vol_pos = next_pos
                         end
                         block_bids_zone_volumes = vcat(block_bids_zone_volumes, volumes)
                         block_bids_zone_prices = vcat(block_bids_zone_prices, prices)
+                        block_bids_zone_tech = vcat(block_bids_zone_tech, tech_vec)
                     end
-                    push!(block_bids_t, [block_bids_zone_volumes, block_bids_zone_prices])
+                    push!(block_bids_t, [block_bids_zone_volumes, block_bids_zone_prices, block_bids_zone_tech])
                 end
                 push!(block_bids, block_bids_t)
             end
+            push!(block_bids_d, block_bids)
 
             function num_bid(t, z)
                 return size(block_bids[t][z][1])[1]
@@ -378,12 +386,12 @@ for scenario_name in scenario_names
             catch e
                 push!(price_forecasts, zeros((num_z+num_z_non_fbmc)*num_t))
                 push!(np_forecasts, zeros(num_z*num_t))
-                push!(generation_forecasts, zeros((num_z+num_z_non_fbmc)*num_tech*num_t))
+                push!(generation_forecasts, zeros(total_num_bid))
                 println("ERROR ENCOUNTERED")
             end
 
-            num_t_passed += num_t  
-            current_date = current_date + Dates.Day(1)
+            global num_t_passed += num_t  
+            global current_date = current_date + Dates.Day(1)
         end
 
         zone_list = []
@@ -443,22 +451,36 @@ for scenario_name in scenario_names
             SK=np_zone_list[12],
         )
 
-        XLSX.writetable(string("price_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
-        XLSX.writetable(string("np_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
+        #XLSX.writetable(string("price_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
+        #XLSX.writetable(string("np_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
 
         generation_matrix = zeros((num_z+num_z_non_fbmc), num_tech, num_t_passed)
-        for z in 1:(num_z+num_z_non_fbmc)
+        for z in 18:18
+            println(z)
             for tech in 1:num_tech
                 t_g = 1
                 for d in 1:day_count
                     for t in 1:num_t
-                        generation_matrix[z, tech, t_g] = generation_forecasts[d][num_t*num_tech*(z-1)+num_t*(tech-1)+t]
+                        gen_mask = []
+                        for t_i in 1:num_t
+                            for z_i in 1:(num_z+num_z_non_fbmc)
+                                for bid_tech in block_bids_d[d][t_i][z_i][3]
+                                    if z == z_i && t == t_i && bid_tech == tech
+                                        push!(gen_mask, 1)
+                                    else
+                                        push!(gen_mask, 0)
+                                    end
+                                end
+                            end
+                        end
+
+                        generation_matrix[z, tech, t_g] = sum(gen_mask .* generation_forecasts[d])
                         t_g += 1
                     end
                 end
             end
         end
-        save("./generation_forecasts/io_a10.jld", "data", generation_matrix)
+        save("./generation_forecasts/io_a10_feb.jld", "data", generation_matrix)
 
-    end
-end
+#    end
+#end
