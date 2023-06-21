@@ -61,14 +61,6 @@ months = [
 ]
 
 for scenario_name in scenario_names
-    coefficients_data = load(string("coefficients_", scenario_name, ".jld"))["data"]
-    experiment_results_alpha = coefficients_data["alpha"]
-    experiment_results_beta = coefficients_data["beta"]
-    experiment_results_gamma = coefficients_data["gamma"]
-    experiment_results_objective = coefficients_data["objective"]
-    experiment_results_timestamp = coefficients_data["timestamps"]
-    objective_weights = 1 .- normalize(experiment_results_objective)
-
     for month in months
 
         if month == "november"
@@ -87,59 +79,11 @@ for scenario_name in scenario_names
 
         price_forecasts = []
         np_forecasts = []
+        generation_forecasts = []
 
         current_date = start_date
         for day in 1:day_count
             println("DAY ", day)
-
-            coeff_t_index = findlast(t -> t < current_date, experiment_results_timestamp)
-
-            alpha = zeros(2*num_tech)
-            beta = zeros(2*num_tech)
-            gamma = zeros(2*num_tech)
-            for z in 3:(num_z+num_z_non_fbmc)
-                alpha_coeffs = zeros(num_tech)
-                beta_coeffs = zeros(num_tech)
-                gamma_coeffs = zeros(num_tech)
-
-                for tech in 1:num_tech
-                    alpha_exp = []
-                    beta_exp = []
-                    gamma_exp = []
-
-                    for e in 1:size(experiment_results_alpha[1:coeff_t_index])[1]
-                        push!(alpha_exp, experiment_results_alpha[e][num_tech*(z-1)+tech])
-                        push!(beta_exp, experiment_results_beta[e][num_tech*(z-1)+tech])
-                        push!(gamma_exp, experiment_results_gamma[e][num_tech*(z-1)+tech])
-                    end
-
-                    alpha_exp = convert(Vector{Float64}, alpha_exp)
-                    beta_exp = convert(Vector{Float64}, beta_exp)
-                    gamma_exp = convert(Vector{Float64}, gamma_exp)
-
-                    #alpha_mean = mean(alpha_exp[findall(!iszero, alpha_exp)])
-                    #beta_mean = mean(beta_exp[findall(!iszero, beta_exp)])
-                    #gamma_mean = mean(gamma_exp[findall(!iszero, gamma_exp)])
-
-                    alpha_mean = mean(alpha_exp[findall(!iszero, alpha_exp)], Weights(objective_weights[findall(!iszero, alpha_exp)]))
-                    beta_mean = mean(beta_exp[findall(!iszero, beta_exp)], Weights(objective_weights[findall(!iszero, beta_exp)]))
-                    gamma_mean = mean(gamma_exp[findall(!iszero, gamma_exp)], Weights(objective_weights[findall(!iszero, gamma_exp)]))
-
-                    if !isnan(alpha_mean)
-                        alpha_coeffs[tech] = alpha_mean
-                    end
-                    if !isnan(beta_mean)
-                        beta_coeffs[tech] = beta_mean
-                    end
-                    if !isnan(gamma_mean)
-                        gamma_coeffs[tech] = gamma_mean
-                    end
-                end
-                
-                alpha = vcat(alpha, alpha_coeffs)
-                beta = vcat(beta, beta_coeffs)
-                gamma = vcat(gamma, gamma_coeffs)
-            end
 
             coal_prices = coal_prices_g[(num_t_passed+1):(num_t_passed)+num_t]
             oil_prices = oil_prices_g[(num_t_passed+1):(num_t_passed)+num_t]
@@ -225,25 +169,26 @@ for scenario_name in scenario_names
                             else
                                 eff = plant_eff[1, tech]
                             end
+                        end
                         
                         if tech == 1 # biomass
-                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = 20
+                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = 40
                         elseif tech == 8 # nuclear
-                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = 30
+                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = 60
                         elseif tech == 9 # waste
                             c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = 0
                         elseif tech == 10 # other
                             c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = 0
                         elseif tech == 2 || tech == 3 # brown_coal
-                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = (coal_prices[t] * 3.6) / (brown_coal_e * eff) + eua_prices[t] * brown_coal_em / (eff * 3.6) 
-                        elseif tech == 5 # hard_coal
-                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = (coal_prices[t] * 3.6) / (hard_coal_e * eff) + eua_prices[t] * hard_coal_em / (eff * 3.6) 
+                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = (coal_prices[t] * 3.6) / (brown_coal_e * eff) + eua_prices[t] * brown_coal_em * 0.0036 / eff
+                        elseif tech == 5 # hard_coal    
+                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = (coal_prices[t] * 3.6) / (hard_coal_e * eff) + eua_prices[t] * hard_coal_em * 0.0036 / eff
                         elseif tech == 4 # gas
-                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = gas_prices[t]/eff + eua_prices[t] * natural_gas_em / (eff * 3.6) 
+                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = gas_prices[t]/eff + eua_prices[t] * natural_gas_em * 0.0036 / eff
                         elseif tech == 6 # oil
-                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = (oil_prices[t] * 3.6) / (oil_e * eff) + eua_prices[t] * oil_em / (eff * 3.6) 
+                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = (oil_prices[t] * 3600/136) / (oil_e * eff) + eua_prices[t] * oil_em * 0.0036 / eff
                         elseif tech == 7 # hydro
-                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = 10
+                            c[num_t*num_tech*(z-1)+num_t*(tech-1)+t] = 20
                         end
                     end
                 end
@@ -255,18 +200,18 @@ for scenario_name in scenario_names
             model = Model(HiGHS.Optimizer)
             set_optimizer_attribute(model, "presolve", "on")
 
-            @variable(model, g[1:(num_z+num_z_non_fbmc)*num_tech*num_t] >= 0)
+            total_num_bid = (num_z+num_z_non_fbmc)*num_tech*num_t
+            @variable(model, g[1:total_num_bid] >= 0)
             @variable(model, np[1:num_z*num_t])
             @variable(model, atc_ex_1[1:num_atc_border*num_t] >= 0.0)
             @variable(model, atc_ex_2[1:num_atc_border*num_t] >= 0.0)
 
             A_balance = spzeros((num_z+num_z_non_fbmc)*num_t, total_num_bid+num_z*num_t+2*num_atc_border*num_t) # contains g and np
-            prev_pos = 0
+            prev_pos = (num_z+num_z_non_fbmc)*num_tech*num_t
             for z in 1:(num_z+num_z_non_fbmc)
                 for t in 1:num_t
-                    for bid in 1:num_bid(t, z)
-                        A_balance[num_t*(z-1)+t, prev_pos + 1] = 1
-                        prev_pos += 1
+                    for tech in 1:num_tech
+                        A_balance[num_t*(z-1)+t, num_t*num_tech*(z-1)+num_t*(tech-1)+t] = 1
                     end
                 end
             end
@@ -300,7 +245,7 @@ for scenario_name in scenario_names
             b1_balance = demand - ren_gen
 
             B_gen = sparse(cat(Matrix(I, total_num_bid, total_num_bid), spzeros(total_num_bid, num_z*num_t + 2*num_atc_border*num_t); dims=(2)))
-            b2_gen = vcat(collect(block_bids[t][z][1] for z in 1:(num_z+num_z_non_fbmc) for t in 1:num_t)...)
+            b2_gen = g_max_t
 
             A_exchange = spzeros(num_t, total_num_bid+num_z*num_t+2*num_atc_border*num_t)
             prev_pos = total_num_bid
@@ -360,13 +305,13 @@ for scenario_name in scenario_names
 
             @constraint(model, sum_z_np(np, num_t) .== 0)
 
-            c = vcat(collect(block_bids[t][z][2] for z in 1:(num_z+num_z_non_fbmc) for t in 1:num_t)...)
             @objective(model, Min, c' * g)
 
             try
                 optimize!(model)
                 push!(price_forecasts, JuMP.dual.(balance))
                 push!(np_forecasts, JuMP.value.(np))
+                push!(generation_forecasts, JuMP.value.(g))
             catch e
                 push!(price_forecasts, zeros((num_z+num_z_non_fbmc)*num_t))
                 push!(np_forecasts, zeros(num_z*num_t))
@@ -434,8 +379,22 @@ for scenario_name in scenario_names
             SK=np_zone_list[12],
         )
 
-        XLSX.writetable(string("price_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
-        XLSX.writetable(string("np_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
+        XLSX.writetable(string("price_forecast_basic_a10_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
+        XLSX.writetable(string("np_forecast_basic_a10_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
+
+        generation_matrix = zeros((num_z+num_z_non_fbmc), num_tech, num_t_passed)
+        for z in 1:(num_z+num_z_non_fbmc)
+            for tech in 1:num_tech
+                t_g = 1
+                for d in 1:day_count
+                    for t in 1:num_t
+                        generation_matrix[z, tech, t_g] = generation_forecasts[d][num_t*num_tech*(z-1)+num_t*(tech-1)+t]
+                        t_g += 1
+                    end
+                end
+            end
+        end
+        save("./generation_forecasts/basic_a10.jld", "data", generation_matrix)
 
     end
 end

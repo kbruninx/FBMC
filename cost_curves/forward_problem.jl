@@ -88,6 +88,7 @@ for scenario_name in scenario_names
 
         price_forecasts = []
         np_forecasts = []
+        generation_forecasts = []
 
         current_date = start_date
         for day in 1:day_count
@@ -373,9 +374,11 @@ for scenario_name in scenario_names
                 optimize!(model)
                 push!(price_forecasts, JuMP.dual.(balance))
                 push!(np_forecasts, JuMP.value.(np))
+                push!(generation_forecasts, JuMP.value.(g))
             catch e
                 push!(price_forecasts, zeros((num_z+num_z_non_fbmc)*num_t))
                 push!(np_forecasts, zeros(num_z*num_t))
+                push!(generation_forecasts, zeros((num_z+num_z_non_fbmc)*num_tech*num_t))
                 println("ERROR ENCOUNTERED")
             end
 
@@ -442,6 +445,20 @@ for scenario_name in scenario_names
 
         XLSX.writetable(string("price_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
         XLSX.writetable(string("np_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
+
+        generation_matrix = zeros((num_z+num_z_non_fbmc), num_tech, num_t_passed)
+        for z in 1:(num_z+num_z_non_fbmc)
+            for tech in 1:num_tech
+                t_g = 1
+                for d in 1:day_count
+                    for t in 1:num_t
+                        generation_matrix[z, tech, t_g] = generation_forecasts[d][num_t*num_tech*(z-1)+num_t*(tech-1)+t]
+                        t_g += 1
+                    end
+                end
+            end
+        end
+        save("./generation_forecasts/io_a10.jld", "data", generation_matrix)
 
     end
 end
