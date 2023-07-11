@@ -14,7 +14,7 @@ function calculate_distance(vertices, vertices_obs)
     return distance/distance_denom
 end
 
-function process_geometry(zones_s, do_central)
+function process_geometry(zones_s, do_central, do_incl_count)
     println(zones_s)
     num_z = size(zones)[1]
     num_t = size(df_timestamps)[1]
@@ -28,8 +28,14 @@ function process_geometry(zones_s, do_central)
     distance_10 = []
     distance_5 = []
     distance_n = []
-    #for t in 2:num_t
-    for t in [400]
+
+    incl_count_10 = 0
+    incl_count_5 = 0
+    incl_count_n = 0
+
+    #num_t = 100
+    for t in 1:num_t
+    #for t in [400]
         println(t)
         df_ptdf_obs_t = df_ptdf_obs[df_ptdf_obs.DateTime .== df_timestamps[t], :]
         df_ptdf_10_t = df_ptdf_10[df_ptdf_10.DateTime .== df_timestamps[t], :]
@@ -72,6 +78,7 @@ function process_geometry(zones_s, do_central)
         poly_5 = Polyhedra.fixandeliminate(poly_5, dims_to_eliminate, rationalize.(zeros(num_z - 2)))
         poly_n = Polyhedra.fixandeliminate(poly_n, dims_to_eliminate, rationalize.(zeros(num_z - 2)))
 
+        #=
         plt = Plots.plot(poly_10, ratio=:equal, alpha=0.5, label=L"$\alpha = 10$")
         Plots.plot!(poly_5, ratio=:equal, alpha=0.5, label=L"$\alpha = 5$")
         Plots.plot!(poly_n, ratio=:equal, alpha=0.5, label="naive")
@@ -88,38 +95,65 @@ function process_geometry(zones_s, do_central)
         )
         display(plt)
         savefig("./figures/flow_based_domain/planes/"*zones_s[1]*"_"*zones_s[2]*"_plane.png")
+        =#
 
         try
-            if do_central
-                com_obs = center_of_mass(poly_obs)
-                denom_com = norm(com_obs - [0,0])
-                d10 = norm(center_of_mass(poly_10) - com_obs) / denom_com
-                d5 = norm(center_of_mass(poly_5) - com_obs) / denom_com
-                dn = norm(center_of_mass(poly_n) - com_obs) / denom_com
+            if do_incl_count
+                if findfirst(z -> z == zones_s[1], zones) < findfirst(z -> z == zones_s[2], zones)
+                    x_coord = zones_s[1]
+                    y_coord = zones_s[2]
+                else
+                    x_coord = zones_s[2]
+                    y_coord = zones_s[1]
+                end
+
+                obs = [df_np_obs[t, x_coord], df_np_obs[t, y_coord]]
+
+                if in(obs, poly_10)
+                    incl_count_10 += 1
+                end
+                if in(obs, poly_5)
+                    incl_count_5 += 1
+                end
+                if in(obs, poly_n)
+                    incl_count_n += 1
+                end
             else
-                v_obs = points(vrep(poly_obs))
-                d10 = calculate_distance(points(vrep(poly_10)), v_obs)
-                d5 = calculate_distance(points(vrep(poly_5)), v_obs)
-                dn = calculate_distance(points(vrep(poly_n)), v_obs)
-            end
+                if do_central
+                    com_obs = center_of_mass(poly_obs)
+                    denom_com = norm(com_obs - [0,0])
+                    d10 = norm(center_of_mass(poly_10) - com_obs) / denom_com
+                    d5 = norm(center_of_mass(poly_5) - com_obs) / denom_com
+                    dn = norm(center_of_mass(poly_n) - com_obs) / denom_com
+                else
+                    v_obs = points(vrep(poly_obs))
+                    d10 = calculate_distance(points(vrep(poly_10)), v_obs)
+                    d5 = calculate_distance(points(vrep(poly_5)), v_obs)
+                    dn = calculate_distance(points(vrep(poly_n)), v_obs)
+                end
 
-            if !isinf(d10)
-                push!(distance_10, d10)
-            end
+                if !isinf(d10)
+                    push!(distance_10, d10)
+                end
 
-            if !isinf(d5)
-                push!(distance_5, d5)
-            end
+                if !isinf(d5)
+                    push!(distance_5, d5)
+                end
 
-            if !isinf(dn)
-                push!(distance_n, dn)
+                if !isinf(dn)
+                    push!(distance_n, dn)
+                end
             end
         catch e
             println("ERROR ENCOUNTERED (not recording)")
         end
     end
 
-    return [mean(distance_10), mean(distance_5), mean(distance_n)]
+    if do_incl_count
+        return [incl_count_10, incl_count_5, incl_count_n]
+    else
+        return [mean(distance_10), mean(distance_5), mean(distance_n)]
+    end
 end
 
 borders = [
@@ -131,15 +165,20 @@ borders = [
 
 border_distance_matrix = zeros(size(borders)[1], 3)
 border_distance_c_matrix = zeros(size(borders)[1], 3)
+border_incl_flow_count_matrix = zeros(size(borders)[1], 3)
 
 for b in 1:size(borders)[1]
 #for b in borders_again_index
-    #border_distance_matrix[b, :] = process_geometry(borders[b], false)
-    border_distance_c_matrix[b, :] = process_geometry(borders[b], true)
+    #border_distance_matrix[b, :] = process_geometry(borders[b], false, false)
+    #border_distance_c_matrix[b, :] = process_geometry(borders[b], true, false)
+    border_incl_flow_count_matrix[b, :] = process_geometry(borders[b], false, true)
 end
 
 #save("./flow_based_domain/border_distance_matrix.jld", "data", border_distance_matrix)
 #border_distance_matrix
 
 #save("./flow_based_domain/border_distance_c_matrix.jld", "data", border_distance_c_matrix)
-border_distance_c_matrix
+#border_distance_c_matrix
+
+save("./flow_based_domain/border_incl_flow_count_matrix.jld", "data", border_incl_flow_count_matrix)
+border_incl_flow_count_matrix

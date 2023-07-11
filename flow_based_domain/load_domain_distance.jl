@@ -27,6 +27,9 @@ df_ptdf_n.DateTime = DateTime.(df_ptdf_n.DateTime)
 df_timestamps = DataFrame(XLSX.readtable("./flow_based_domain/timestamps.xlsx", "Sheet1"))
 df_timestamps.DateTime = DateTime.(df_timestamps.DateTime)
 
+df_np_obs = DataFrame(XLSX.readtable("./cost_curves/data/net_positions.xlsx", "Sheet1"))
+df_np_obs.DateTime = DateTime.(df_np_obs.DateTime)
+
 start_date = DateTime(2023, 2, 1)
 end_date = DateTime(2023, 3, 1)
 df_timestamps = df_timestamps[(df_timestamps.DateTime .>= start_date) .& (df_timestamps.DateTime .<= end_date), :DateTime]
