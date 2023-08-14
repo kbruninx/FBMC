@@ -36,30 +36,30 @@ plant_types = [
     "nuclear", "waste", "other"
 ] 
 
-df_atc = DataFrame(XLSX.readtable("./data/atc.xlsx", "Sheet1"))
+df_atc = DataFrame(XLSX.readtable("./data-july/atc.xlsx", "Sheet1"))
 
-xf_da_prices = XLSX.readxlsx("./data/day_ahead_prices.xlsx")
-xf_demand = XLSX.readxlsx("./data/demand.xlsx")
-xf_fuel_prices = XLSX.readxlsx("./data/fuel_prices.xlsx")
-xf_generation = XLSX.readxlsx("./data/generation.xlsx")
-xf_ren_gen = XLSX.readxlsx("./data/renewable_generation.xlsx")
-xf_netpos = XLSX.readxlsx("./data/net_positions.xlsx")
+xf_da_prices = XLSX.readxlsx("./data-july/day_ahead_prices.xlsx")
+xf_demand = XLSX.readxlsx("./data-july/demand.xlsx")
+xf_fuel_prices = XLSX.readxlsx("./data-july/fuel_prices.xlsx")
+xf_generation = XLSX.readxlsx("./data-july/generation.xlsx")
+xf_ren_gen = XLSX.readxlsx("./data-july/renewable_generation.xlsx")
+xf_netpos = XLSX.readxlsx("./data-july/net_positions.xlsx")
 xf_capacities = XLSX.readxlsx("./data/installed_capacities.xlsx")
-xf_generation_outages = XLSX.readxlsx("./data/generation_outages.xlsx")
+xf_generation_outages = XLSX.readxlsx("./data-july/generation_outages.xlsx")
 
-xf_da_prices_non_fbmc = XLSX.readxlsx("./data/day_ahead_prices_non_fbmc.xlsx")
-xf_demand_non_fbmc = XLSX.readxlsx("./data/demand_non_fbmc.xlsx")
-xf_generation_non_fbmc = XLSX.readxlsx("./data/generation_non_fbmc.xlsx")
-xf_ren_gen_non_fbmc = XLSX.readxlsx("./data/renewable_generation_non_fbmc.xlsx")
+xf_da_prices_non_fbmc = XLSX.readxlsx("./data-july/day_ahead_prices_non_fbmc.xlsx")
+xf_demand_non_fbmc = XLSX.readxlsx("./data-july/demand_non_fbmc.xlsx")
+xf_generation_non_fbmc = XLSX.readxlsx("./data-july/generation_non_fbmc.xlsx")
+xf_ren_gen_non_fbmc = XLSX.readxlsx("./data-july/renewable_generation_non_fbmc.xlsx")
 xf_capacities_non_fbmc = XLSX.readxlsx("./data/installed_capacities_non_fbmc_corrected.xlsx")
-xf_generation_outages_non_fbmc = XLSX.readxlsx("./data/generation_outages_non_fbmc.xlsx")
+xf_generation_outages_non_fbmc = XLSX.readxlsx("./data-july/generation_outages_non_fbmc.xlsx")
 
 
 num_z = 14 # including ALBE and ALDE
 num_z_non_fbmc = 4
 num_atc_border = 11
 
-num_train_t = 5064 # size of training set
+num_train_t = 7948 # size of training set
 num_tech = 10
 
 coal_prices_g = vec(remove_missing(xf_fuel_prices["Sheet1"][sprintf1("B2:B%d", num_train_t+1)]))
@@ -123,9 +123,13 @@ ren_gen_g_non_fbmc = remove_missing(xf_ren_gen_non_fbmc["Sheet1"][sprintf1("B2:E
 
 timestamps = DateTime.(vec(remove_missing(xf_demand["Sheet1"][sprintf1("A2:A%d", num_train_t+1)]))) 
 
-df_ptdf = DataFrame(XLSX.readtable("../flow_based_domain/ptdf_z_calc_nuts.xlsx", "Sheet1"))
+df_ptdf = DataFrame(XLSX.readtable("./data-july/ptdf_z_naive_raw.xlsx", "Sheet1"))
 df_ptdf.DateTime = DateTime.(df_ptdf.DateTime)
 
-num_j = maximum(combine(groupby(df_ptdf, :DateTime), :line_id => length)[:, :line_id_length])
+#num_j = maximum(combine(groupby(df_ptdf, :DateTime), :line_id => length)[:, :line_id_length])
+num_j = 150
 
 plant_eff = npzread("./plant_efficiencies.npy")
+
+#observed_lines = sort(unique(df_ptdf, :line_id)[!, :line_id])
+#num_l = size(sort(unique(df_ptdf, :line_id)[!, :line_id]))[1]

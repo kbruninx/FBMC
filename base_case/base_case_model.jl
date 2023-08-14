@@ -115,8 +115,13 @@ function optimise_base_case(num_t_passed, current_date, optimality_problem, eps_
     end
 
     #model = Model(HiGHS.Optimizer)
-    model = Model(Gurobi.Optimizer)
-    set_optimizer_attribute(model, "time_limit", 180.0)
+    
+    ipopt = optimizer_with_attributes(Ipopt.Optimizer)
+    optimizer = optimizer_with_attributes(Juniper.Optimizer, "nl_solver"=>ipopt)
+    model = Model(optimizer)
+    
+    #model = Model(Gurobi.Optimizer)
+    #set_optimizer_attribute(model, "time_limit", 180.0)
     #set_optimizer_attribute(model, "presolve", "on")
 
     @variable(model, g[1:num_t, 1:num_p] >= 0.0)
@@ -230,7 +235,7 @@ end
 
 start_date = DateTime(2022, 9, 11)
 #end_date = DateTime(2022, 9, 25)
-end_date = DateTime(2023, 3, 1)
+end_date = DateTime(2023, 7, 30)
 
 #run_base_case(start_date, end_date, true)
 run_base_case(start_date, end_date, false)

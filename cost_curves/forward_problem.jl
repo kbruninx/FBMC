@@ -50,18 +50,21 @@ end
 
 scenario_names = [
     #"norm_1_duality_gap_w_atc",
-    "norm_1_w_atc",
+    #"norm_1_w_atc",
     #"norm_2_duality_gap_w_atc",
     #"norm_2_w_atc",
+    "until_july_2"
 ]
 
 months = [
     #"november", 
-    "february"
+    #"february",
+    "april-july",
+    "february-july",
 ]
 
-scenario_name = "norm_1_w_atc"
-month = "february"
+scenario_name = "until_july_2"
+month = "february-july"
 #for scenario_name in scenario_names
 
     coefficients_data = load(string("coefficients_", scenario_name, ".jld"))["data"]
@@ -82,6 +85,14 @@ month = "february"
             # February
             start_date = DateTime(2023, 2, 1)
             end_date = DateTime(2023, 3, 1)
+        elseif month == "april-july"
+            # From April until July
+            start_date = DateTime(2023, 4, 1)
+            end_date = DateTime(2023, 7, 28)
+        elseif month == "february-july"
+            # From February until July
+            start_date = DateTime(2023, 2, 1)
+            end_date = DateTime(2023, 7, 28)
         end
 
         num_t_passed = findfirst(t->t == start_date, timestamps)
@@ -266,7 +277,6 @@ month = "february"
 
             # CLEARING
 
-            #model = Model(Gurobi.Optimizer)
             model = Model(HiGHS.Optimizer)
             set_optimizer_attribute(model, "presolve", "on")
 
@@ -451,9 +461,10 @@ month = "february"
             SK=np_zone_list[12],
         )
 
-        #XLSX.writetable(string("price_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
-        #XLSX.writetable(string("np_forecast_full_tso_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
+        XLSX.writetable(string("price_forecast_", scenario_name, "_", month, ".xlsx"), df_price_forecast)
+        XLSX.writetable(string("np_forecast_", scenario_name, "_", month, ".xlsx"), df_np_forecast)
 
+        #=
         generation_matrix = zeros((num_z+num_z_non_fbmc), num_tech, num_t_passed)
         for z in 18:18
             println(z)
@@ -480,7 +491,7 @@ month = "february"
                 end
             end
         end
-        save("./generation_forecasts/io_a10_feb.jld", "data", generation_matrix)
-
+        save("./generation_forecasts/io_a10_feb_test.jld", "data", generation_matrix)
+        =#
 #    end
 #end
